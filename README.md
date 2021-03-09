@@ -1,5 +1,5 @@
 
-![](https://github.com/aws-samples/aws-health-aware/raw/master/readme-images/aha_banner.png?raw=1)
+![](https://github.com/aws-samples/aws-health-aware/blob/main/readme-images/aha_banner.png?raw=1)
 
 
 **Table of Contents**
@@ -22,7 +22,7 @@
 AWS Health Aware (AHA) is an automated notification tool for sending well-formatted AWS Health Alerts to Amazon Chime, Slack, Microsoft Teams, E-mail or an AWS Eventbridge compatible endpoint as long as you have Business or Enterprise Support.
 
 # Architecture
-![](https://github.com/aws-samples/aws-health-aware/raw/master/readme-images/architecture.png?raw=1)
+![](https://github.com/aws-samples/aws-health-aware/blob/main/readme-images/architecture.png?raw=1)
 
 | Resource | Description                    |
 | ------------- | ------------------------------ |
