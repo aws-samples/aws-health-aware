@@ -36,10 +36,10 @@ AWS Health Aware (AHA) is an automated notification tool for sending well-format
 | `MicrosoftChannelSecret`      | Webhook URL for Microsoft Teams stored in AWS Secrets Manager       |
 | `SlackChannelSecret`   | Webhook URL for Slack stored in AWS Secrets Manager     |
 
-# Configuring an Endpoint
+# Configuring an Endpoint - 
 AHA can send to multiple endpoints (webhook URLs, Email or EventBridge). To use any of these you'll need to set it up before-hand as some of these are done on 3rd party websites. We'll go over some of the common ones here.
 
-## Creating a Amazon Chime Webhook URL
+## Creating a Amazon Chime Webhook URL - 
 **You will need to have access to create a Amazon Chime room and manage webhooks.**
 
 1. Create a new [chat room](https://docs.aws.amazon.com/chime/latest/ug/chime-chat-room.html) for events (i.e. aws_events).   
@@ -48,7 +48,7 @@ AHA can send to multiple endpoints (webhook URLs, Email or EventBridge). To use 
 4. **Type** a name for the bot (e.g. AWS Health Bot) and **click** *Create*.   
 5. **Click** *Copy URL*, we will need it for the deployment.
 
-## Creating a Slack Webhook URL
+## Creating a Slack Webhook URL - 
 **You will need to have access to add a new channel and app to your Slack Workspace**.
 
 1. Create a new [channel](https://slack.com/help/articles/201402297-Create-a-channel) for events (i.e. aws_events)
@@ -59,7 +59,7 @@ AHA can send to multiple endpoints (webhook URLs, Email or EventBridge). To use 
 6. From this page you can change the name of the webhook (i.e. AWS Bot), the icon/emoji to use, etc.   
 7. For the deployment we will need the *Webhook URL*.
 
-## Creating a Microsoft Teams Webhook URL
+## Creating a Microsoft Teams Webhook URL - 
 **You will need to have access to add a new channel and app to your Microsoft Teams channel**.
 
 1. Create a new [channel](https://docs.microsoft.com/en-us/microsoftteams/get-started-with-teams-create-your-first-teams-and-channels) for events (i.e. aws_events)
@@ -70,13 +70,13 @@ AHA can send to multiple endpoints (webhook URLs, Email or EventBridge). To use 
 6. From this page you can change the name of the webhook (i.e. AWS Bot), the icon/emoji to use, etc. **Click** *Create* when done.  
 7. For the deployment we will need the webhook *URL* that is presented.
 
-## Configuring an Email
+## Configuring an Email - 
 
 1. You'll be able to send email alerts to one or many addresses. However, you must first [verify](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/verify-email-addresses-procedure.html) the email(s) in the Simple Email Service (SES) console.
 2. AHA utilizes Amazon SES so all you need is to enter in a To: address and a From: address.
 3. You *may* have to allow a rule in your environment so that the emails don't get labeled as SPAM. This will be something you have to congfigure on your own.
 
-## Creating a Amazon EventBridge Ingestion ARN
+## Creating a Amazon EventBridge Ingestion ARN - 
 
 1.	In the AWS Console, search for **Amazon EventBridge**.
 2.	On the left hand side, **click** *Event buses*.
@@ -84,7 +84,7 @@ AHA can send to multiple endpoints (webhook URLs, Email or EventBridge). To use 
 4.	Give your Event bus a name and **click** *Create*.
 5.  For the deployment we will need the *Name* of the Event bus **(not the ARN)**.
 
-# Setup
+# Setup - 
 There are 2 available ways to deploy AHA, both are done via the same CloudFormation template to make deployment as easy as possible.
 
 The 2 deployment methods for AHA are:
