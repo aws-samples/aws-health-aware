@@ -1,0 +1,310 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation Template for AWS Health Aware (AHA)
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Customize Alerts/Notifications
+        Parameters:
+          - AWSOrganizationsEnabled
+          - AWSHealthEventType
+      - Label:
+          default: Package Information
+        Parameters:
+          - S3Bucket
+          - S3Key
+      - Label:
+          default: >-
+            Communication Channels - Slack/Microsoft Teams/Amazon Chime And/or
+            EventBridge
+        Parameters:
+          - SlackWebhookURL
+          - MicrosoftTeamsWebhookURL
+          - AmazonChimeWebhookURL
+          - EventBusName
+      - Label:
+          default: Email Setup - For Alerting via Email
+        Parameters:
+          - FromEmail
+          - ToEmail
+          - Subject
+      - Label:
+          default: More Configurations - Optional
+        Parameters:
+          - EventSearchBack
+          - Regions
+Conditions:
+  UsingSlack: !Not [!Equals [!Ref SlackWebhookURL, None]]
+  UsingTeams: !Not [!Equals [!Ref MicrosoftTeamsWebhookURL, None]]
+  UsingChime: !Not [!Equals [!Ref AmazonChimeWebhookURL, None]]
+  UsingEventBridge: !Not [!Equals [!Ref EventBusName, None]]
+Parameters:
+  AWSOrganizationsEnabled:
+    Description: >-
+      You can receive both PHD and SHD alerts if you're using AWS Organizations.
+      If you are, make sure to enable Organizational Health View:
+      (https://docs.aws.amazon.com/health/latest/ug/aggregate-events.html) to
+      aggregate all PHD events in your AWS Organization. If not, you can still
+      get SHD alerts.
+    Default: 'No'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Type: String
+  AWSHealthEventType:
+    Description: >-
+      Select the event type that you want AHA to report on. Refer to
+      https://docs.aws.amazon.com/health/latest/APIReference/API_EventType.html for more information on EventType.
+    Default: 'issue | accountNotification | scheduledChange | investigation'
+    AllowedValues:
+      - 'issue | accountNotification | scheduledChange | investigation'
+      - 'issue'
+    Type: String
+  S3Bucket:
+    Description: >-
+      Name of your S3 Bucket where the AHA Package .zip resides. Just the name
+      of the bucket (e.g. my-s3-bucket)
+    Type: String
+  S3Key:
+    Description: >-
+      Name of the .zip in your S3 Bucket. Just the name of the file (e.g.
+      aha-v1.0.zip)
+    Type: String
+  EventBusName:
+    Description: >-
+      This is to ingest alerts into AWS EventBridge. Enter the event bus name if
+      you wish to send the alerts to the AWS EventBridge. Note: By ingesting
+      these alerts to AWS EventBridge, you can integrate with 35 SaaS vendors
+      such as DataDog/NewRelic/PagerDuty. If you don't prefer to use EventBridge, leave the default (None).
+    Type: String
+    Default: None
+  SlackWebhookURL:
+    Description: >-
+      Enter the Slack Webhook URL. If you don't prefer to use Slack, leave the default (None).
+    Type: String
+    Default: None
+  MicrosoftTeamsWebhookURL:
+    Description: >-
+      Enter Microsoft Teams Webhook URL. If you don't prefer to use MS Teams,
+      leave the default (None).   
+    Type: String
+    Default: None
+  AmazonChimeWebhookURL:
+    Description: >-
+      Enter the Chime Webhook URL, If you don't prefer to use Amazon Chime,
+      leave the default (None).   
+    Type: String
+    Default: None
+  Regions:
+    Description: >-
+      By default, AHA reports events affecting all AWS regions. 
+      If you want to report on certain regions you can enter up to 10 in a comma separated format.
+      Available Regions: us-east-1,us-east-2,us-west-1,us-west-2,af-south-1,ap-east-1,ap-south-1,ap-northeast-3,
+      ap-northeast-2,ap-southeast-1,ap-southeast-2,ap-northeast-1,ca-central-1,eu-central-1,eu-west-1,eu-west-2,
+      eu-south-1,eu-south-3,eu-north-1,me-south-1,sa-east-1,global
+    Default: all regions
+    AllowedPattern: ".+"
+    ConstraintDescription: No regions were entered, please read the documentation about selecting all regions or filtering on some.
+    Type: String
+  EventSearchBack:
+    Description: How far back to search for events in hours. Default is 1 hour
+    Default: '1'
+    Type: Number
+  FromEmail:
+    Description: Enter FROM Email Address
+    Type: String
+    Default: none@domain.com
+    AllowedPattern: ^([\w+-.%]+@[\w-.]+\.[A-Za-z]+)(, ?[\w+-.%]+@[\w-.]+\.[A-Za-z]+)*$
+    ConstraintDescription: 'FromEmail is not a valid, please verify entry. If not sending to email, leave as the default, none@domain.com.'
+  ToEmail:
+    Description: >-
+      Enter email addresses separated by commas (for ex: abc@amazon.com,
+      bcd@amazon.com)
+    Type: String
+    Default: none@domain.com
+    AllowedPattern: ^([\w+-.%]+@[\w-.]+\.[A-Za-z]+)(, ?[\w+-.%]+@[\w-.]+\.[A-Za-z]+)*$
+    ConstraintDescription: 'ToEmail is not a valid, please verify entry. If not sending to email, leave as the default, none@domain.com.'   
+  Subject:
+    Description: Enter the subject of the email address
+    Type: String
+    Default: AWS Health Alert
+Resources:
+  LambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /         
+      Policies:
+        - PolicyName: AHA-LambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetResourcePolicy
+                  - secretsmanager:DescribeSecret
+                  - secretsmanager:ListSecretVersionIds
+                  - secretsmanager:GetSecretValue
+                Resource: 
+                  - !If [UsingTeams, !Sub '${MicrosoftChannelSecret}', !Ref AWS::NoValue]
+                  - !If [UsingSlack, !Sub '${SlackChannelSecret}', !Ref AWS::NoValue]
+                  - !If [UsingEventBridge, !Sub '${EventBusNameSecret}', !Ref AWS::NoValue]
+                  - !If [UsingChime, !Sub '${ChimeChannelSecret}', !Ref AWS::NoValue]
+              - Effect: Allow
+                Action:
+                  - health:DescribeAffectedAccountsForOrganization
+                  - health:DescribeAffectedEntitiesForOrganization
+                  - health:DescribeEventDetailsForOrganization
+                  - health:DescribeEventsForOrganization 
+                  - health:DescribeEventDetails
+                  - health:DescribeEvents
+                  - health:DescribeEventTypes
+                  - health:DescribeAffectedEntities
+                  - organizations:ListAccounts
+                Resource: "*"                               
+              - Effect: Allow
+                Action:
+                  - dynamodb:ListTables
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:*'
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                Resource: !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:*'  
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateTimeToLive
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:GetItem
+                  - dynamodb:Scan
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:UpdateTable
+                  - dynamodb:GetRecords
+                Resource: !GetAtt DynamoDBTable.Arn
+              - Effect: Allow
+                Action:
+                  - events:PutEvents
+                Resource: !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${EventBusName}'
+  DynamoDBTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: arn
+          AttributeType: S
+      KeySchema:
+        - AttributeName: arn
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: TRUE
+  LambdaSchedule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: Lambda trigger Event
+      ScheduleExpression: rate(1 minute)
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt LambdaFunction.Arn
+          Id: LambdaSchedule
+  LambdaSchedulePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !GetAtt LambdaFunction.Arn
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt LambdaSchedule.Arn
+  MicrosoftChannelSecret:
+    Type: 'AWS::SecretsManager::Secret'
+    Condition: UsingTeams    
+    Properties:
+      Name: MicrosoftChannelID
+      Description: Microsoft Channel ID Secret
+      SecretString:
+        Ref: MicrosoftTeamsWebhookURL
+      Tags:
+        - Key: HealthCheckMicrosoft
+          Value: ChannelID
+  SlackChannelSecret:
+    Type: 'AWS::SecretsManager::Secret'
+    Condition: UsingSlack   
+    Properties:
+      Name: SlackChannelID
+      Description: Slack Channel ID Secret
+      SecretString:
+        Ref: SlackWebhookURL
+      Tags:
+        - Key: HealthCheckSlack
+          Value: ChannelID
+  EventBusNameSecret:
+    Type: 'AWS::SecretsManager::Secret'
+    Condition: UsingEventBridge       
+    Properties:
+      Name: EventBusName
+      Description: EventBus Name Secret
+      SecretString:
+        Ref: EventBusName
+      Tags:
+        - Key: EventBusName
+          Value: ChannelID
+  ChimeChannelSecret:
+    Type: 'AWS::SecretsManager::Secret'
+    Condition: UsingChime    
+    Properties:
+      Name: ChimeChannelID
+      Description: Chime Channel ID Secret
+      SecretString:
+        Ref: AmazonChimeWebhookURL
+      Tags:
+        - Key: HealthCheckChime
+          Value: ChannelID
+  LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Description: Lambda function that runs AHA
+      Code:
+        S3Bucket:
+          Ref: S3Bucket
+        S3Key:
+          Ref: S3Key
+      Handler: handler.main
+      MemorySize: 128
+      Timeout: 600
+      Role:
+        'Fn::Sub': '${LambdaExecutionRole.Arn}'
+      Runtime: python3.8
+      Environment:
+        Variables:
+          REGIONS:
+            Ref: Regions
+          FROM_EMAIL:
+            Ref: FromEmail
+          TO_EMAIL:
+            Ref: ToEmail
+          EMAIL_SUBJECT:
+            Ref: Subject
+          DYNAMODB_TABLE:
+            Ref: DynamoDBTable
+          EVENT_SEARCH_BACK:
+            Ref: EventSearchBack
+          ORG_STATUS:
+            Ref: AWSOrganizationsEnabled
+          HEALTH_EVENT_TYPE:
+            Ref: AWSHealthEventType
