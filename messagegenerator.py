@@ -134,8 +134,8 @@ def get_org_message_for_eventbridge(event_details, event_type, affected_org_acco
             "attachments": [
                 {
                         "fields": [
-                            { "title": "Account(s)", "value": "All accounts\nin region", "short": True },
-                            { "title": "Resource(s)", "value": "All resources\nin region", "short": True },
+                            { "title": "Account(s)", "value": affected_org_accounts, "short": True },
+                            { "title": "Resource(s)", "value": affected_org_entities, "short": True },
                             { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
                             { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
                             { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
@@ -198,8 +198,8 @@ def get_org_message_for_slack(event_details, event_type, affected_org_accounts, 
                 {
                     "color": "00ff00",
                         "fields": [
-                            { "title": "Account(s)", "value": "All accounts\nin region", "short": True },
-                            { "title": "Resource(s)", "value": "All resources\nin region", "short": True },
+                            { "title": "Account(s)", "value": affected_org_accounts, "short": True },
+                            { "title": "Resource(s)", "value": affected_org_entities, "short": True },
                             { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
                             { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
                             { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
