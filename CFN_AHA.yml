@@ -38,6 +38,7 @@ Conditions:
   UsingTeams: !Not [!Equals [!Ref MicrosoftTeamsWebhookURL, None]]
   UsingChime: !Not [!Equals [!Ref AmazonChimeWebhookURL, None]]
   UsingEventBridge: !Not [!Equals [!Ref EventBusName, None]]
+  UsingSecrets: !Or [!Condition UsingSlack, !Condition UsingTeams, !Condition UsingChime, !Condition UsingEventBridge]
 Parameters:
   AWSOrganizationsEnabled:
     Description: >-
@@ -153,17 +154,20 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
-              - Effect: Allow
-                Action:
-                  - secretsmanager:GetResourcePolicy
-                  - secretsmanager:DescribeSecret
-                  - secretsmanager:ListSecretVersionIds
-                  - secretsmanager:GetSecretValue
-                Resource: 
-                  - !If [UsingTeams, !Sub '${MicrosoftChannelSecret}', !Ref AWS::NoValue]
-                  - !If [UsingSlack, !Sub '${SlackChannelSecret}', !Ref AWS::NoValue]
-                  - !If [UsingEventBridge, !Sub '${EventBusNameSecret}', !Ref AWS::NoValue]
-                  - !If [UsingChime, !Sub '${ChimeChannelSecret}', !Ref AWS::NoValue]
+              - !If 
+                - UsingSecrets
+                - Effect: Allow
+                  Action:
+                   - 'secretsmanager:GetResourcePolicy'
+                   - 'secretsmanager:DescribeSecret'
+                   - 'secretsmanager:ListSecretVersionIds'
+                   - 'secretsmanager:GetSecretValue'
+                  Resource: 
+                   - !If [UsingTeams, !Sub '${MicrosoftChannelSecret}', !Ref AWS::NoValue]
+                   - !If [UsingSlack, !Sub '${SlackChannelSecret}', !Ref AWS::NoValue]
+                   - !If [UsingEventBridge, !Sub '${EventBusNameSecret}', !Ref AWS::NoValue]
+                   - !If [UsingChime, !Sub '${ChimeChannelSecret}', !Ref AWS::NoValue]
+                - !Ref 'AWS::NoValue'
               - Effect: Allow
                 Action:
                   - health:DescribeAffectedAccountsForOrganization
