@@ -3,7 +3,7 @@
 
 **Table of Contents**
 
-- [Introduction](#introduction)
+- [Introduction](#introduction) 
 - [Architecture](#architecture)
 - [Configuring an Endpoint](#configuring-an-endpoint)
   * [Creating a Amazon Chime Webhook URL](#creating-a-amazon-chime-webhook-url)
