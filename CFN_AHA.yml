@@ -58,7 +58,7 @@ Parameters:
       https://docs.aws.amazon.com/health/latest/APIReference/API_EventType.html for more information on EventType.
     Default: 'issue | accountNotification | scheduledChange | investigation'
     AllowedValues:
-      - 'issue | accountNotification | scheduledChange | investigation'
+      - 'issue | accountNotification | scheduledChange'
       - 'issue'
     Type: String
   S3Bucket:
