@@ -56,7 +56,7 @@ Parameters:
     Description: >-
       Select the event type that you want AHA to report on. Refer to
       https://docs.aws.amazon.com/health/latest/APIReference/API_EventType.html for more information on EventType.
-    Default: 'issue | accountNotification | scheduledChange | investigation'
+    Default: 'issue | accountNotification | scheduledChange'
     AllowedValues:
       - 'issue | accountNotification | scheduledChange'
       - 'issue'
