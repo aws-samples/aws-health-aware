@@ -7,7 +7,8 @@ import time
 import decimal
 import socket
 import configparser
-from dateutil import parser, tzlocal
+from dateutil import parser
+from dateutil.tz import tzlocal
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen, URLError, HTTPError
@@ -27,7 +28,17 @@ health_active_region = health_active_list[1]
 print("current health region: ", health_active_region)
 master_role_arn = os.environ["MASTER_ROLE_ARN"]
 
-# create a boto3 health client w/ backoff/retry
+def assume_role(role_arn, session_name='master__session'):
+    client = boto3.client('sts', region_name=health_active_region)
+    response = client.assume_role(RoleArn=role_arn, RoleSessionName=session_name)
+
+    session = boto3.Session(
+        aws_access_key_id=response['Credentials']['AccessKeyId'],
+        aws_secret_access_key=response['Credentials']['SecretAccessKey'],
+        aws_session_token=response['Credentials']['SessionToken'])
+
+    return session
+
 config = Config(
     region_name=health_active_region,
     retries=dict(
@@ -37,30 +48,13 @@ config = Config(
     )
 )
 
-assume_role_cache: dict = {}
-def assumed_role_session(role_arn: str, base_session: botocore.session.Session = None):
-    base_session = base_session or boto3.session.Session()._session
-    fetcher = botocore.credentials.AssumeRoleCredentialFetcher(
-        client_creator = base_session.create_client,
-        source_credentials = base_session.get_credentials(),
-        role_arn = role_arn,
-        extra_args = {}
-    )
-    creds = botocore.credentials.DeferredRefreshableCredentials(
-        method = 'assume-role',
-        refresh_using = fetcher.fetch_credentials,
-        time_fetcher = lambda: datetime.now(tzlocal())
-    )
-    botocore_session = botocore.session.Session()
-    botocore_session._credentials = creds
-    return boto3.Session(botocore_session = botocore_session)
-
-if master_role_arn.lower() == "none":
-    health_client = boto3.client('health', config=config)
+# create a boto3 health client in the appropriate account w/ backoff/retry
+if master_role_arn == "None":
     print(f'Running in single account mode')
+    health_client = boto3.client('health', config=config)
 else:
     print(f'Running in cross-account mode using role {master_role_arn}')
-    master_session = assumed_role_session(role_arn=master_role_arn)
+    master_session = assume_role(role_arn=master_role_arn)
     health_client = master_session.client('health', config=config)
 
 def send_alert(event_details, event_type):

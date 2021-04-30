@@ -422,8 +422,9 @@ def get_org_message_for_teams(event_details, event_type, affected_org_accounts, 
                 }
             ]
         }
-    return message
     print("Message sent to Teams: ", message)
+    return message
+
 
 
 def get_message_for_email(event_details, event_type):

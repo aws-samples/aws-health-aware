@@ -33,6 +33,7 @@ Metadata:
         Parameters:
           - EventSearchBack
           - Regions
+          - MasterAccountRoleArn
 Conditions:
   UsingSlack: !Not [!Equals [!Ref SlackWebhookURL, None]]
   UsingTeams: !Not [!Equals [!Ref MicrosoftTeamsWebhookURL, None]]

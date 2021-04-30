@@ -41,6 +41,7 @@ Resources:
               - Effect: Allow
                 Action:              
                   - organizations:ListAccounts
+                  - organizations:ListAWSServiceAccessForOrganization
                 Resource: "*"
 Outputs:
   AWSHealthAwareRoleForPHDEventsArn:
