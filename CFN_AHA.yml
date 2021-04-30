@@ -39,6 +39,7 @@ Conditions:
   UsingChime: !Not [!Equals [!Ref AmazonChimeWebhookURL, None]]
   UsingEventBridge: !Not [!Equals [!Ref EventBusName, None]]
   UsingSecrets: !Or [!Condition UsingSlack, !Condition UsingTeams, !Condition UsingChime, !Condition UsingEventBridge]
+  UsingCrossAccountRole: !Not [!Equals [!Ref MasterAccountRoleArn, None]]
 Parameters:
   AWSOrganizationsEnabled:
     Description: >-
@@ -51,6 +52,9 @@ Parameters:
     AllowedValues:
       - 'Yes'
       - 'No'
+    Type: String
+  MasterAccountRoleArn:
+    Description: Arn of the IAM role in the master account for collecting PHD Events. 'None' if deploying into master.
     Type: String
   AWSHealthEventType:
     Description: >-
@@ -204,6 +208,13 @@ Resources:
                 Action:
                   - events:PutEvents
                 Resource: !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${EventBusName}'
+              - !If 
+                - UsingCrossAccountRole
+                - Effect: Allow
+                  Action:
+                    - sts:AssumeRole
+                  Resource: !Ref MasterAccountRoleArn
+                - !Ref 'AWS::NoValue'                
   DynamoDBTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
@@ -312,3 +323,9 @@ Resources:
             Ref: AWSOrganizationsEnabled
           HEALTH_EVENT_TYPE:
             Ref: AWSHealthEventType
+          MASTER_ROLE_ARN: 
+            !If
+              - UsingCrossAccountRole
+              - !Ref MasterAccountRoleArn
+              - "None"
+              
