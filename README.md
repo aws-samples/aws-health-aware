@@ -129,17 +129,30 @@ The 2 deployment methods for AHA are:
 
 1. [Enable Health Organizational View](https://docs.aws.amazon.com/health/latest/ug/enable-organizational-view-in-health-console.html) from the console, so that you can aggregate all Personal Health Dashboard (PHD) events for all accounts in your AWS Organization. 
 2. Have at least 1 [endpoint](#configuring-an-endpoint) configured (you can have multiple)
-3. Have access to deploy Cloudformation Templates with the following resources: AWS IAM policies, Amazon DynamoDB Tables, AWS Lambda, Amazon EventBridge and AWS Secrets Manager in the **AWS Organizations Master Account**.
+3. Have an account (the workload account) in which to deploy the AHA solution that is **not** the **AWS Organizations Master Account**
+4. Have access to deploy Cloudformation Templates with the following resources: AWS IAM policies, Amazon DynamoDB Tables, AWS Lambda, Amazon EventBridge and AWS Secrets Manager in the **workload accoun**
+5. Have access to deploy Cloudformation Templates in the Organizations account with the following resources: AWS IAM roles in the **AWS Organizations Master Account**
 
 ### Deployment
 
+
 1. Clone the AHA package that from this repository. If you're not familiar with the process, [here](https://git-scm.com/docs/git-clone) is some documentation. The URL to clone is in the upper right-hand corner labeled `Clone uri`
-2. In the root of this package you'll have two files; `handler.py` and `messagegenerator.py`. Use your tool of choice to zip them both up and name them with a unique name (e.g. aha-v1.8.zip). **Note: Putting the version number in the name will make upgrading AHA seamless.**
-3. Upload the .zip you created in Step 1 to an S3 in the same region you plan to deploy this in.   
-4. In your AWS console go to *CloudFormation*.   
-5. In the *CloudFormation* console **click** *Create stack > With new resources (standard)*.   
-6. Under *Template Source* **click** *Upload a template file* and **click** *Choose file*  and select `CFN_AHA.yml` **Click** *Next*.   
-7. -In *Stack name* type a stack name (i.e. AHA-Deployment).
+2. In your AWS console of your Organizations Master Account go to *CloudFormation*.   
+3. In the *CloudFormation* console **click** *Create stack > With new resources (standard)*.   
+4. Under *Template Source* **click** *Upload a template file* and **click** *Choose file*  and select `CFN_AHA_MASTER_ROLE.yml` **Click** *Next*.   
+5. -In *Stack name* type a stack name (i.e. CFN-AHA-Master-Role).
+-In *WorkloadAWSAccountID* enter the AWS Account ID where you will be deploying the solution
+6. Scroll to the bottom and **click** *Next*. 
+7. Scroll to the bottom and **click** *Next* again.   
+8. Scroll to the bottom and **click** the *checkbox* and **click** *Create stack*.   
+9. Wait until *Status* changes to *CREATE_COMPLETE* (roughly 2-4 minutes). 
+10. Browse to the stack's *Outputs* section and make note of the AWSHealthAwareRoleForPHDEventsArn which will be needed when deploying the solution
+11. In the root of the package you'll have two files; `handler.py` and `messagegenerator.py`. Use your tool of choice to zip them both up and name them with a unique name (e.g. aha-v1.8.zip). **Note: Putting the version number in the name will make upgrading AHA seamless.**
+12. Upload the .zip you created in Step 1 to an S3 in the *workload account* in the same region you plan to deploy this in.
+13. In your AWS console of your *workload account* go to *CloudFormation*.   
+14. In the *CloudFormation* console **click** *Create stack > With new resources (standard)*.   
+15. Under *Template Source* **click** *Upload a template file* and **click** *Choose file*  and select `CFN_AHA.yml` **Click** *Next*.   
+16. -In *Stack name* type a stack name (i.e. AHA-Deployment).
 -In *AWSOrganizationsEnabled* change the dropdown to `Yes`. If you do NOT have AWS Organizations enabled you should be following the steps for [AHA for users who are NOT using AWS Organizations](#aha-without-aws-organizations)  
 -In *AWSHealthEventType* select whether you want to receive *all* event types or *only* issues.   
 -In *S3Bucket* type ***just*** the bucket name of the S3 bucket used in step 3  (e.g. my-aha-bucket).    
@@ -148,10 +161,10 @@ The 2 deployment methods for AHA are:
 -In the *Email Setup* section enter the From and To Email addresses as well as the Email subject. If you aren't configuring email, just leave it as is.
 -In *EventSearchBack* enter in the amount of hours you want to search back for events. Default is 1 hour.  
 -In *Regions* enter in the regions you want to search for events in. Default is all regions. You can filter for up to 10, comma separated with (e.g. us-east-1, us-east-2).
-8. Scroll to the bottom and **click** *Next*. 
-9. Scroll to the bottom and **click** *Next* again.   
-10. Scroll to the bottom and **click** the *checkbox* and **click** *Create stack*.   
-11. Wait until *Status* changes to *CREATE_COMPLETE* (roughly 2-4 minutes). 
+17. Scroll to the bottom and **click** *Next*. 
+18. Scroll to the bottom and **click** *Next* again.   
+19. Scroll to the bottom and **click** the *checkbox* and **click** *Create stack*.   
+20. Wait until *Status* changes to *CREATE_COMPLETE* (roughly 2-4 minutes). 
 
 # Updating
 **Until this project is migrated to the AWS Serverless Application Model (SAM), updates will have to be done as described below:**

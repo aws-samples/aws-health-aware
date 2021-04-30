@@ -57,6 +57,7 @@ Parameters:
   MasterAccountRoleArn:
     Description: Arn of the IAM role in the master account for collecting PHD Events. 'None' if deploying into master.
     Type: String
+    Default: None
   AWSHealthEventType:
     Description: >-
       Select the event type that you want AHA to report on. Refer to
