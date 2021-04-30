@@ -1,6 +1,5 @@
 import json
 import boto3
-import botocore
 import os
 import re
 import time
@@ -8,7 +7,6 @@ import decimal
 import socket
 import configparser
 from dateutil import parser
-from dateutil.tz import tzlocal
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen, URLError, HTTPError
