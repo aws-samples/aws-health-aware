@@ -42,6 +42,7 @@ Resources:
                 Action:              
                   - organizations:ListAccounts
                   - organizations:ListAWSServiceAccessForOrganization
+                  - organizations:DescribeAccount
                 Resource: "*"
 Outputs:
   AWSHealthAwareRoleForPHDEventsArn:

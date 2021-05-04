@@ -37,6 +37,17 @@ def assume_role(role_arn, session_name='master__session'):
 
     return session
 
+def get_account_name(account_id):
+    try:
+        org_session = assume_role(master_role_arn)
+        org_client = org_session.client('organizations')
+        account_name = org_client.describe_account(AccountId=account_id)['Account']['Name']
+    except Exception:
+        account_name = account_id
+    
+    return account_name
+
+
 config = Config(
     region_name=health_active_region,
     retries=dict(
@@ -246,7 +257,8 @@ def send_org_email(event_details, eventType, affected_org_accounts, affected_org
     RECIPIENT = os.environ['TO_EMAIL'].split(",")
     #AWS_REGION = "us-east-1"
     AWS_REGION = os.environ['AWS_REGION']
-    SUBJECT = os.environ['EMAIL_SUBJECT']
+    rich_subject = f"""[NEW] AWS Health reported an issue with the {event_details['successfulSet'][0]['event'][
+        'service'].upper()} service in the {event_details['successfulSet'][0]['event']['region'].upper()} region."""
     BODY_HTML = get_org_message_for_email(event_details, eventType, affected_org_accounts, affected_org_entities)
     client = boto3.client('ses', region_name=AWS_REGION)
     response = client.send_email(
@@ -262,7 +274,7 @@ def send_org_email(event_details, eventType, affected_org_accounts, affected_org
             },
             'Subject': {
                 'Charset': 'UTF-8',
-                'Data': SUBJECT,
+                'Data': rich_subject,
             },
         },
     )
@@ -350,11 +362,14 @@ def update_org_ddb(event_arn, str_update, status_code, event_details, affected_o
                     # Cleanup: DynamoDB entry deleted 24 hours after last update
                 }
             )
+            # Only need to enrich when alerting
+            affected_org_accounts_details = [
+                f"{get_account_name(account_id)} ({account_id})" for account_id in affected_org_accounts]
             # send to configured endpoints
             if status_code != "closed":
-                send_org_alert(event_details, affected_org_accounts, affected_org_entities, event_type="create")
+                send_org_alert(event_details, affected_org_accounts_details, affected_org_entities, event_type="create")
             else:
-                send_org_alert(event_details, affected_org_accounts, affected_org_entities, event_type="resolve")
+                send_org_alert(event_details, affected_org_accounts_details, affected_org_entities, event_type="resolve")
 
         else:
             item = response['Item']
@@ -375,11 +390,13 @@ def update_org_ddb(event_arn, str_update, status_code, event_details, affected_o
                         # Cleanup: DynamoDB entry deleted 24 hours after last update
                     }
                 )
+                affected_org_accounts_details = [
+                    f"{get_account_name(account_id)} ({account_id})" for account_id in affected_org_accounts]
                 # send to configured endpoints
                 if status_code != "closed":
-                    send_org_alert(event_details, affected_org_accounts, affected_org_entities, event_type="create")
+                    send_org_alert(event_details, affected_org_accounts_details, affected_org_entities, event_type="create")
                 else:
-                    send_org_alert(event_details, affected_org_accounts, affected_org_entities, event_type="resolve")
+                    send_org_alert(event_details, affected_org_accounts_details, affected_org_entities, event_type="resolve")
             else:
                 print("No new updates found, checking again in 1 minute.")
 
@@ -692,6 +709,7 @@ def main(event, context):
         print('Event(s) Received: ', json.dumps(aws_events))
         if len(aws_events) > 0:
             for event in aws_events:
+                affected_org_accounts_details = []
                 event_arn = event['arn']
                 status_code = event['statusCode']
                 str_update = parser.parse((event['lastUpdatedTime']))
