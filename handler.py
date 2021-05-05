@@ -38,11 +38,13 @@ def assume_role(role_arn, session_name='master__session'):
     return session
 
 def get_account_name(account_id):
+    # Don't worry too much if this fails - just print the account id
     try:
         org_session = assume_role(master_role_arn)
         org_client = org_session.client('organizations')
         account_name = org_client.describe_account(AccountId=account_id)['Account']['Name']
-    except Exception:
+    except Exception as e:
+        print(e)
         account_name = account_id
     
     return account_name
