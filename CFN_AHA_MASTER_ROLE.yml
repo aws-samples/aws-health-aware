@@ -10,7 +10,6 @@ Resources:
     Type: "AWS::IAM::Role"
     Properties:
       Description: "Grants access to PHD events"
-      RoleName: AWSHealthAwareRoleForPHDEvents
       Path: /
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
