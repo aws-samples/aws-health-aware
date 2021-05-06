@@ -711,7 +711,6 @@ def main(event, context):
         print('Event(s) Received: ', json.dumps(aws_events))
         if len(aws_events) > 0:
             for event in aws_events:
-                affected_org_accounts_details = []
                 event_arn = event['arn']
                 status_code = event['statusCode']
                 str_update = parser.parse((event['lastUpdatedTime']))
