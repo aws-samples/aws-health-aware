@@ -33,12 +33,45 @@ Metadata:
         Parameters:
           - EventSearchBack
           - Regions
+          - ManagementAccountRoleArn
+          - AccountIDs
+    ParameterLabels:
+      AWSOrganizationsEnabled:
+        default: AWS Organizations Enabled?
+      ManagementAccountRoleArn:
+        default: ARN of the AWS Organizations Management Account assume role (if using)
+      AWSHealthEventType:
+        default: The types of events to get alerted on
+      S3Bucket:
+        default: Name of S3 Bucket
+      S3Key:
+        default: Name of .zip file in S3 Bucket
+      SlackWebhookURL:
+        default: Slack Webhook URL
+      MicrosoftTeamsWebhookURL:
+        default: Microsoft Teams Webhook URL
+      AmazonChimeWebhookURL:
+        default: Amazon Chime Webhook URL
+      FromEmail:
+        default: Email From
+      ToEmail:
+        default: Email To
+      Subject:
+        default: Subject of Email
+      HealthAPIFrequency:
+        default: Hours back to search for events
+      Regions:
+        default: Which regions to search for events in
+      AccountIDs:
+        default: Exclude any account numbers?
 Conditions:
   UsingSlack: !Not [!Equals [!Ref SlackWebhookURL, None]]
   UsingTeams: !Not [!Equals [!Ref MicrosoftTeamsWebhookURL, None]]
   UsingChime: !Not [!Equals [!Ref AmazonChimeWebhookURL, None]]
   UsingEventBridge: !Not [!Equals [!Ref EventBusName, None]]
   UsingSecrets: !Or [!Condition UsingSlack, !Condition UsingTeams, !Condition UsingChime, !Condition UsingEventBridge]
+  UsingCrossAccountRole: !Not [!Equals [!Ref ManagementAccountRoleArn, None]]
+  UsingAccountIds: !Not [!Equals [!Ref AccountIDs, None]]  
 Parameters:
   AWSOrganizationsEnabled:
     Description: >-
@@ -52,6 +85,10 @@ Parameters:
       - 'Yes'
       - 'No'
     Type: String
+  ManagementAccountRoleArn:
+    Description: Arn of the IAM role in the top-level management account for collecting PHD Events. 'None' if deploying into the top-level management account.
+    Type: String
+    Default: None
   AWSHealthEventType:
     Description: >-
       Select the event type that you want AHA to report on. Refer to
@@ -107,6 +144,13 @@ Parameters:
     AllowedPattern: ".+"
     ConstraintDescription: No regions were entered, please read the documentation about selecting all regions or filtering on some.
     Type: String
+  AccountIDs:
+    Description: >-
+      If you would like to EXCLUDE any accounts from alerting, upload a .csv file of comma-seperated account numbers to the same S3 bucket 
+      where the AHA.zip package is located. Sample AccountIDs file name: aha_account_ids.csv. If not, leave the default of None.
+    Default: None
+    Type: String
+    AllowedPattern: (None)|(.+(\.csv))$    
   EventSearchBack:
     Description: How far back to search for events in hours. Default is 1 hour
     Default: '1'
@@ -167,6 +211,7 @@ Resources:
                    - !If [UsingSlack, !Sub '${SlackChannelSecret}', !Ref AWS::NoValue]
                    - !If [UsingEventBridge, !Sub '${EventBusNameSecret}', !Ref AWS::NoValue]
                    - !If [UsingChime, !Sub '${ChimeChannelSecret}', !Ref AWS::NoValue]
+                   - !If [UsingCrossAccountRole, !Sub '${AssumeRoleSecret}', !Ref AWS::NoValue]                   
                 - !Ref 'AWS::NoValue'
               - Effect: Allow
                 Action:
@@ -179,6 +224,7 @@ Resources:
                   - health:DescribeEventTypes
                   - health:DescribeAffectedEntities
                   - organizations:ListAccounts
+                  - organizations:DescribeAccount  
                 Resource: "*"                               
               - Effect: Allow
                 Action:
@@ -204,6 +250,20 @@ Resources:
                 Action:
                   - events:PutEvents
                 Resource: !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${EventBusName}'
+              - !If 
+                - UsingAccountIds
+                - Effect: Allow
+                  Action:
+                    - s3:GetObject
+                  Resource: !Sub 'arn:aws:s3:::${S3Bucket}/${AccountIDs}'
+                - !Ref 'AWS::NoValue'                
+              - !If 
+                - UsingCrossAccountRole
+                - Effect: Allow
+                  Action:
+                    - sts:AssumeRole
+                  Resource: !Ref ManagementAccountRoleArn
+                - !Ref 'AWS::NoValue'                
   DynamoDBTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
@@ -279,6 +339,17 @@ Resources:
       Tags:
         - Key: HealthCheckChime
           Value: ChannelID
+  AssumeRoleSecret:
+    Type: 'AWS::SecretsManager::Secret'
+    Condition: UsingCrossAccountRole    
+    Properties:
+      Name: AssumeRoleArn
+      Description: Management account role for AHA to assume
+      SecretString:
+        Ref: ManagementAccountRoleArn
+      Tags:
+        - Key: AssumeRoleArn
+          Value: ChannelID          
   LambdaFunction:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -296,8 +367,12 @@ Resources:
       Runtime: python3.8
       Environment:
         Variables:
+          ACCOUNT_IDS:
+            Ref: AccountIDs        
           REGIONS:
             Ref: Regions
+          S3_BUCKET:
+            Ref: S3Bucket            
           FROM_EMAIL:
             Ref: FromEmail
           TO_EMAIL:
@@ -312,3 +387,8 @@ Resources:
             Ref: AWSOrganizationsEnabled
           HEALTH_EVENT_TYPE:
             Ref: AWSHealthEventType
+          MANAGEMENT_ROLE_ARN: 
+            !If
+              - UsingCrossAccountRole
+              - !Ref ManagementAccountRoleArn
+              - "None"

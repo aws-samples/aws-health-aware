@@ -6,69 +6,129 @@ import os
 import time
 
 
-def get_message_for_slack(event_details, event_type):
+def get_message_for_slack(event_details, event_type, affected_accounts, affected_entities, slack_webhook):
     message = ""
     summary = ""
-    if event_type == "create":
-        summary += (
-            f":rotating_light:*[NEW] AWS Health reported an issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
-            f"the {event_details['successfulSet'][0]['event']['region'].upper()} region.*"
-        )
-        message = {
-            "text": summary,
-            "attachments": [
-                {
-                    "color": "danger",
-                        "fields": [
-                            { "title": "Account(s)", "value": "All accounts\nin region", "short": True },
-                            { "title": "Resource(s)", "value": "All resources\nin region", "short": True },
-                            { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
-                            { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
-                            { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
-                            { "title": "Status", "value": event_details['successfulSet'][0]['event']['statusCode'], "short": True },
-                            { "title": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn'], "short": False },                          
-                            { "title": "Updates", "value": get_last_aws_update(event_details), "short": False }
-                        ],
-                }
-            ]
-        }
+    if slack_webhook == "webhook":
+        if len(affected_entities) >= 1:
+            affected_entities = "\n".join(affected_entities)
+        else:
+            affected_entities = "All resources\nin region"
+        if len(affected_accounts) >= 1:
+            affected_accounts = "\n".join(affected_accounts)
+        else:
+            affected_accounts = "All accounts\nin region"      
+        if event_type == "create":
+            summary += (
+                f":rotating_light:*[NEW] AWS Health reported an issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
+                f"the {event_details['successfulSet'][0]['event']['region'].upper()} region.*"
+            )
+            message = {
+                "text": summary,
+                "attachments": [
+                    {
+                        "color": "danger",
+                            "fields": [
+                                { "title": "Account(s)", "value": affected_accounts, "short": True },
+                                { "title": "Resource(s)", "value": affected_entities, "short": True },
+                                { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
+                                { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
+                                { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
+                                { "title": "Status", "value": event_details['successfulSet'][0]['event']['statusCode'], "short": True },
+                                { "title": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn'], "short": False },                          
+                                { "title": "Updates", "value": get_last_aws_update(event_details), "short": False }
+                            ],
+                    }
+                ]
+            }
 
-    elif event_type == "resolve":
-        summary += (
-            f":heavy_check_mark:*[RESOLVED] The AWS Health issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
-            f"the {event_details['successfulSet'][0]['event']['region'].upper()} region is now resolved.*"
-        )
-        message = {
-            "text": summary,
-            "attachments": [
-                {
-                    "color": "00ff00",
-                        "fields": [
-                            { "title": "Account(s)", "value": "All accounts\nin region", "short": True },
-                            { "title": "Resource(s)", "value": "All resources\nin region", "short": True },
-                            { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
-                            { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
-                            { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
-                            { "title": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['endTime']), "short": True },
-                            { "title": "Status", "value": event_details['successfulSet'][0]['event']['statusCode'], "short": True },
-                            { "title": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn'], "short": False },                                
-                            { "title": "Updates", "value": get_last_aws_update(event_details), "short": False }
-                        ],
-                }
-            ]
-        }
+        elif event_type == "resolve":
+            summary += (
+                f":heavy_check_mark:*[RESOLVED] The AWS Health issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
+                f"the {event_details['successfulSet'][0]['event']['region'].upper()} region is now resolved.*"
+            )
+            message = {
+                "text": summary,
+                "attachments": [
+                    {
+                        "color": "00ff00",
+                            "fields": [
+                                { "title": "Account(s)", "value": affected_accounts, "short": True },
+                                { "title": "Resource(s)", "value": affected_entities, "short": True },
+                                { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
+                                { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
+                                { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
+                                { "title": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['endTime']), "short": True },
+                                { "title": "Status", "value": event_details['successfulSet'][0]['event']['statusCode'], "short": True },
+                                { "title": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn'], "short": False },                                
+                                { "title": "Updates", "value": get_last_aws_update(event_details), "short": False }
+                            ],
+                    }
+                ]
+            }
+    else:
+        if len(affected_entities) >= 1:
+            affected_entities = "\n".join(affected_entities)
+        else:
+            affected_entities = "All resources in region"
+        if len(affected_accounts) >= 1:
+            affected_accounts = "\n".join(affected_accounts)
+        else:
+            affected_accounts = "All accounts in region"      
+        if event_type == "create":
+            summary += (
+                f":rotating_light:*[NEW] AWS Health reported an issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
+                f"the {event_details['successfulSet'][0]['event']['region'].upper()} region.*"
+            )
+            message = {
+               "text": summary,
+                "accounts": affected_accounts,
+                "resources": affected_entities,
+                "service": event_details['successfulSet'][0]['event']['service'],
+                "region": event_details['successfulSet'][0]['event']['region'],
+                "start_time": cleanup_time(event_details['successfulSet'][0]['event']['startTime']),
+                "status": event_details['successfulSet'][0]['event']['statusCode'],
+                "event_arn": event_details['successfulSet'][0]['event']['arn'],
+                "updates": get_last_aws_update(event_details)
+            }
+
+        elif event_type == "resolve":
+            summary += (
+                f":heavy_check_mark:*[RESOLVED] The AWS Health issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
+                f"the {event_details['successfulSet'][0]['event']['region'].upper()} region is now resolved.*"
+            )
+            message = {
+                "text": summary,
+                "accounts": affected_accounts,
+                "resources": affected_entities,                
+                "service": event_details['successfulSet'][0]['event']['service'],
+                "region": event_details['successfulSet'][0]['event']['region'],
+                "start_time": cleanup_time(event_details['successfulSet'][0]['event']['startTime']),
+                "status": event_details['successfulSet'][0]['event']['statusCode'],
+                "event_arn": event_details['successfulSet'][0]['event']['arn'],
+                "updates": get_last_aws_update(event_details)
+            }
+    
     print("Message sent to Slack: ", message)
     return message
 
-def get_message_for_eventbridge(event_details, event_type):
+def get_message_for_eventbridge(event_details, event_type, affected_accounts, affected_entities):
     message = ""
+    if len(affected_entities) >= 1:
+        affected_entities = "\n".join(affected_entities)
+    else:
+        affected_entities = "All resources\nin region"
+    if len(affected_accounts) >= 1:
+        affected_accounts = "\n".join(affected_accounts)
+    else:
+        affected_accounts = "All accounts\nin region"       
     if event_type == "create":
         message = {
             "attachments": [
                 {
                         "fields": [
-                            { "title": "Account(s)", "value": "All accounts\nin region", "short": True },
-                            { "title": "Resource(s)", "value": "All resources\nin region", "short": True },
+                            { "title": "Account(s)", "value": affected_accounts, "short": True },
+                            { "title": "Resource(s)", "value": affected_entities, "short": True },
                             { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
                             { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
                             { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
@@ -85,8 +145,8 @@ def get_message_for_eventbridge(event_details, event_type):
             "attachments": [
                 {
                         "fields": [
-                            { "title": "Account(s)", "value": "All accounts\nin region", "short": True },
-                            { "title": "Resource(s)", "value": "All resources\nin region", "short": True },
+                            { "title": "Account(s)", "value": affected_accounts, "short": True },
+                            { "title": "Resource(s)", "value": affected_entities, "short": True },
                             { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
                             { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
                             { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
@@ -152,79 +212,130 @@ def get_org_message_for_eventbridge(event_details, event_type, affected_org_acco
     return message
 
 
-def get_org_message_for_slack(event_details, event_type, affected_org_accounts, affected_org_entities):
+def get_org_message_for_slack(event_details, event_type, affected_org_accounts, affected_org_entities, slack_webhook):
     message = ""
     summary = ""
-    if len(affected_org_entities) >= 1:
-        affected_org_entities = "\n".join(affected_org_entities)
-    else:
-        affected_org_entities = "All resources\nin region"
-    if len(affected_org_accounts) >= 1:
-        affected_org_accounts = "\n".join(affected_org_accounts)
-    else:
-        affected_org_accounts = "All accounts\nin region"
-    if event_type == "create":
-        summary += (
-            f":rotating_light:*[NEW] AWS Health reported an issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
-            f"the {event_details['successfulSet'][0]['event']['region'].upper()} region.*"
-        )
-        message = {
-            "text": summary,
-            "attachments": [
-                {
-                    "color": "danger",
-                        "fields": [
-                            { "title": "Account(s)", "value": affected_org_accounts, "short": True },
-                            { "title": "Resource(s)", "value": affected_org_entities, "short": True },
-                            { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
-                            { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
-                            { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
-                            { "title": "Status", "value": event_details['successfulSet'][0]['event']['statusCode'], "short": True },
-                            { "title": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn'], "short": False },                                  
-                            { "title": "Updates", "value": get_last_aws_update(event_details), "short": False }
-                        ],
-                }
-            ]
-        }
+    if slack_webhook == "webhook":
+        if len(affected_org_entities) >= 1:
+            affected_org_entities = "\n".join(affected_org_entities)
+        else:
+            affected_org_entities = "All resources\nin region"
+        if len(affected_org_accounts) >= 1:
+            affected_org_accounts = "\n".join(affected_org_accounts)
+        else:
+            affected_org_accounts = "All accounts\nin region"        
+        if event_type == "create":
+            summary += (
+                f":rotating_light:*[NEW] AWS Health reported an issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
+                f"the {event_details['successfulSet'][0]['event']['region'].upper()} region.*"
+            )
+            message = {
+                "text": summary,
+                "attachments": [
+                    {
+                        "color": "danger",
+                            "fields": [
+                                { "title": "Account(s)", "value": affected_org_accounts, "short": True },
+                                { "title": "Resource(s)", "value": affected_org_entities, "short": True },
+                                { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
+                                { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
+                                { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
+                                { "title": "Status", "value": event_details['successfulSet'][0]['event']['statusCode'], "short": True },
+                                { "title": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn'], "short": False },                                  
+                                { "title": "Updates", "value": get_last_aws_update(event_details), "short": False }
+                            ],
+                    }
+                ]
+            }
 
-    elif event_type == "resolve":
-        summary += (
-            f":heavy_check_mark:*[RESOLVED] The AWS Health issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
-            f"the {event_details['successfulSet'][0]['event']['region'].upper()} region is now resolved.*"
-        )
-        message = {
-            "text": summary,
-            "attachments": [
-                {
-                    "color": "00ff00",
-                        "fields": [
-                            { "title": "Account(s)", "value": affected_org_accounts, "short": True },
-                            { "title": "Resource(s)", "value": affected_org_entities, "short": True },
-                            { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
-                            { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
-                            { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
-                            { "title": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['endTime']), "short": True },
-                            { "title": "Status", "value": event_details['successfulSet'][0]['event']['statusCode'], "short": True },
-                            { "title": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn'], "short": False },                                
-                            { "title": "Updates", "value": get_last_aws_update(event_details), "short": False }
-                        ],
-                }
-            ]
-        }
+        elif event_type == "resolve":
+            summary += (
+                f":heavy_check_mark:*[RESOLVED] The AWS Health issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
+                f"the {event_details['successfulSet'][0]['event']['region'].upper()} region is now resolved.*"
+            )
+            message = {
+                "text": summary,
+                "attachments": [
+                    {
+                        "color": "00ff00",
+                            "fields": [
+                                { "title": "Account(s)", "value": affected_org_accounts, "short": True },
+                                { "title": "Resource(s)", "value": affected_org_entities, "short": True },
+                                { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
+                                { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
+                                { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
+                                { "title": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['endTime']), "short": True },
+                                { "title": "Status", "value": event_details['successfulSet'][0]['event']['statusCode'], "short": True },
+                                { "title": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn'], "short": False },                                
+                                { "title": "Updates", "value": get_last_aws_update(event_details), "short": False }
+                            ],
+                    }
+                ]
+            }
+    else:
+        if len(affected_org_entities) >= 1:
+            affected_org_entities = "\n".join(affected_org_entities)
+        else:
+            affected_org_entities = "All resources in region"
+        if len(affected_org_accounts) >= 1:
+            affected_org_accounts = "\n".join(affected_org_accounts)
+        else:
+            affected_org_accounts = "All accounts in region"        
+        if event_type == "create":
+            summary += (
+                f":rotating_light:*[NEW] AWS Health reported an issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
+                f"the {event_details['successfulSet'][0]['event']['region'].upper()} region.*"
+            )
+            message = {
+               "text": summary,
+                "accounts": affected_org_accounts,
+                "resources": affected_org_entities,
+                "service": event_details['successfulSet'][0]['event']['service'],
+                "region": event_details['successfulSet'][0]['event']['region'],
+                "start_time": cleanup_time(event_details['successfulSet'][0]['event']['startTime']),
+                "status": event_details['successfulSet'][0]['event']['statusCode'],
+                "event_arn": event_details['successfulSet'][0]['event']['arn'],
+                "updates": get_last_aws_update(event_details)
+            }
+
+        elif event_type == "resolve":
+            summary += (
+                f":heavy_check_mark:*[RESOLVED] The AWS Health issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
+                f"the {event_details['successfulSet'][0]['event']['region'].upper()} region is now resolved.*"
+            )
+            message = {
+                "text": summary,
+                "accounts": affected_org_accounts,
+                "resources": affected_org_entities,                
+                "service": event_details['successfulSet'][0]['event']['service'],
+                "region": event_details['successfulSet'][0]['event']['region'],
+                "start_time": cleanup_time(event_details['successfulSet'][0]['event']['startTime']),
+                "status": event_details['successfulSet'][0]['event']['statusCode'],
+                "event_arn": event_details['successfulSet'][0]['event']['arn'],
+                "updates": get_last_aws_update(event_details)
+            } 
     json.dumps(message)
     print("Message sent to Slack: ", message)
     return message
 
 
-def get_message_for_chime(event_details, event_type):
+def get_message_for_chime(event_details, event_type, affected_accounts, affected_entities):
     message = ""
+    if len(affected_entities) >= 1:
+        affected_entities = "\n".join(affected_entities)
+    else:
+        affected_entities = "All resources\nin region"
+    if len(affected_accounts) >= 1:
+        affected_accounts = "\n".join(affected_accounts)
+    else:
+        affected_accounts = "All accounts\nin region"   
     summary = ""
     if event_type == "create":
 
         message = str("/md" + "\n" + "**:rotating_light:\[NEW\] AWS Health reported an issue with the " + event_details['successfulSet'][0]['event']['service'].upper() +  " service in " + event_details['successfulSet'][0]['event']['region'].upper() + " region.**" + "\n"
           "---" + "\n"
-          "**Account(s)**: " + "All accounts in region" + "\n"
-          "**Resource(s)**: " + "All resources in region" + "\n"
+          "**Account(s)**: " + affected_accounts + "\n"
+          "**Resource(s)**: " + affected_entities + "\n"
           "**Service**: " + event_details['successfulSet'][0]['event']['service'] + "\n"
           "**Region**: " + event_details['successfulSet'][0]['event']['region'] + "\n" 
           "**Start Time (UTC)**: " + cleanup_time(event_details['successfulSet'][0]['event']['startTime']) + "\n"
@@ -237,8 +348,8 @@ def get_message_for_chime(event_details, event_type):
 
         message = str("/md" + "\n" + "**:heavy_check_mark:\[RESOLVED\] The AWS Health issue with the " + event_details['successfulSet'][0]['event']['service'].upper() +  " service in " + event_details['successfulSet'][0]['event']['region'].upper() + " region is now resolved.**" + "\n"
           "---" + "\n"
-          "**Account(s)**: " + "All accounts in region" + "\n"
-          "**Resource(s)**: " + "All resources in region" + "\n"
+          "**Account(s)**: " + affected_accounts + "\n"
+          "**Resource(s)**: " + affected_entities + "\n"
           "**Service**: " + event_details['successfulSet'][0]['event']['service'] + "\n"
           "**Region**: " + event_details['successfulSet'][0]['event']['region'] + "\n" 
           "**Start Time (UTC)**: " + cleanup_time(event_details['successfulSet'][0]['event']['startTime']) + "\n"
@@ -296,8 +407,16 @@ def get_org_message_for_chime(event_details, event_type, affected_org_accounts, 
 
 
 
-def get_message_for_teams(event_details, event_type):
+def get_message_for_teams(event_details, event_type, affected_accounts, affected_entities):
     message = ""
+    if len(affected_entities) >= 1:
+        affected_entities = "\n".join(affected_entities)
+    else:
+        affected_entities = "All resources\nin region"
+    if len(affected_accounts) >= 1:
+        affected_accounts = "\n".join(affected_accounts)
+    else:
+        affected_accounts = "All accounts\nin region"      
     summary = ""
     if event_type == "create":
         title = "&#x1F6A8; [NEW] AWS Health reported an issue with the " + event_details['successfulSet'][0]['event'][
@@ -313,8 +432,8 @@ def get_message_for_teams(event_details, event_type):
                     "activityTitle": str(title),
                     "markdown": False,
                     "facts": [
-                        {"name": "Account(s)", "value": "All accounts\nin region"},
-                        {"name": "Resource(s)", "value": "All resources\nin region"},
+                        {"name": "Account(s)", "value": affected_accounts},
+                        {"name": "Resource(s)", "value": affected_entities},
                         {"name": "Service", "value": event_details['successfulSet'][0]['event']['service']},
                         {"name": "Region", "value": event_details['successfulSet'][0]['event']['region']},
                         {"name": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime'])},
@@ -340,8 +459,8 @@ def get_message_for_teams(event_details, event_type):
                     "activityTitle": str(title),
                     "markdown": False,
                     "facts": [
-                        {"name": "Account(s)", "value": "All accounts\nin region"},
-                        {"name": "Resource(s)", "value": "All resources\nin region"},
+                        {"name": "Account(s)", "value": affected_accounts},
+                        {"name": "Resource(s)", "value": affected_entities},
                         {"name": "Service", "value": event_details['successfulSet'][0]['event']['service']},
                         {"name": "Region", "value": event_details['successfulSet'][0]['event']['region']},
                         {"name": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime'])},
@@ -426,15 +545,15 @@ def get_org_message_for_teams(event_details, event_type, affected_org_accounts, 
     print("Message sent to Teams: ", message)
 
 
-def get_message_for_email(event_details, event_type):
+def get_message_for_email(event_details, event_type, affected_accounts, affected_entities):
     if event_type == "create":
         BODY_HTML = f"""
         <html>
             <body>
                 <h>Greetings from AWS Health Aware,</h><br>
                 <p>There is an AWS incident that is in effect which may likely impact your resources. Here are the details:<br><br>
-                <b>Account(s):</b> All accounts in region<br>
-                <b>Resource(s):</b> All service related resources in region<br>
+                <b>Account(s):</b> {affected_accounts}<br>
+                <b>Resource(s):</b> {affected_entities}<br>
                 <b>Service:</b> {event_details['successfulSet'][0]['event']['service']}<br>
                 <b>Region:</b> {event_details['successfulSet'][0]['event']['region']}<br>
                 <b>Start Time (UTC):</b> {cleanup_time(event_details['successfulSet'][0]['event']['startTime'])}<br>                
@@ -454,8 +573,8 @@ def get_message_for_email(event_details, event_type):
             <body>
                 <h>Greetings again from AWS Health Aware,</h><br>
                 <p>Good news! The AWS Health incident from earlier has now been marked as resolved.<br><br>
-                <b>Account(s):</b> All accounts in region<br>
-                <b>Resource(s):</b>   All service related resources in region<br>                         
+                <b>Account(s):</b> {affected_accounts}<br>
+                <b>Resource(s):</b>   {affected_entities}<br>                         
                 <b>Service:</b> {event_details['successfulSet'][0]['event']['service']}<br>
                 <b>Region:</b> {event_details['successfulSet'][0]['event']['region']}<br>
                 <b>Start Time (UTC):</b> {cleanup_time(event_details['successfulSet'][0]['event']['startTime'])}<br>
