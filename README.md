@@ -71,10 +71,11 @@ AHA can send to multiple endpoints (webhook URLs, Email or EventBridge). To use 
 -resources  
 -service  
 -region  
+-status  
 -start_time  
 -event_arn  
 -updates  
-5. When done you should have 8 variables, double check them as they are case sensitive and will be referenced. When checked **click** on *done* and *next*.
+5. When done you should have 9 variables, double check them as they are case sensitive and will be referenced. When checked **click** on *done* and *next*.
 6. **Click** on *add step* and then on the add a workflow step **click** *add* next to *send a message*.
 7. Under *send this message to:* select the channel you created in Step 1 in *message text* you can should recreate this following:  
 ![](https://github.com/aws-samples/aws-health-aware/blob/main/readme-images/workflow.png?raw=1)
