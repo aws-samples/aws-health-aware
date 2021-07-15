@@ -45,7 +45,7 @@ def get_account_name(account_id):
 
     return account_name
 
-def send_alert(event_details, event_type):
+def send_alert(event_details, affected_accounts, affected_entities, event_type):
     slack_url = get_secrets()["slack"]
     teams_url = get_secrets()["teams"]
     chime_url = get_secrets()["chime"]
@@ -281,13 +281,13 @@ def send_org_email(event_details, eventType, affected_org_accounts, affected_org
 def get_health_accounts(health_client, event, event_arn):
     affected_accounts = []
     accounts_paginator = health_client.get_paginator('describe_affected_entities')
-    event_accounts_page_iterator = event_accounts_paginator.paginate(
+    event_accounts_page_iterator = accounts_paginator.paginate(
         eventArn=event_arn
     )
     for event_accounts_page in event_accounts_page_iterator:
         json_event_accounts = json.dumps(event_accounts_page, default=myconverter)
         parsed_event_accounts = json.loads(json_event_accounts)
-        affected_org_accounts = (parsed_event_accounts['entities'][0]['awsAccountId'])
+        affected_accounts.append(parsed_event_accounts['entities'][0]['awsAccountId'])
     return affected_accounts
 
 def get_health_entities(health_client, event, event_arn):
@@ -439,7 +439,8 @@ def update_ddb(event_arn, str_update, status_code, event_details, affected_accou
     srt_ddb_format_full = "%Y-%m-%d %H:%M:%S"
     str_ddb_format_sec = '%s'
     sec_now = datetime.strftime(datetime.now(), str_ddb_format_sec)
-
+    affected_accounts_details = [
+                    f"{get_account_name(account_id)} ({account_id})" for account_id in affected_accounts]
     # check if event arn already exists
     try:
         response = aha_ddb_table.get_item(
@@ -463,8 +464,7 @@ def update_ddb(event_arn, str_update, status_code, event_details, affected_accou
                     # Cleanup: DynamoDB entry deleted 24 hours after last update
                 }
             )
-            affected_accounts_details = [
-                    f"{get_account_name(account_id)} ({account_id})" for account_id in affected_accounts]            
+
             # send to configured endpoints
             if status_code != "closed":
                 send_alert(event_details, affected_accounts, affected_entities, event_type="create")
@@ -641,6 +641,7 @@ def describe_events(health_client):
         events = response.get('events', [])
         aws_events = json.dumps(events, default=myconverter)
         aws_events = json.loads(aws_events)
+
         print('Event(s) Received: ', json.dumps(aws_events))
         if len(aws_events) > 0:  # if there are new event(s) from AWS
             for event in aws_events:
@@ -648,6 +649,9 @@ def describe_events(health_client):
                 status_code = event['statusCode']
                 str_update = parser.parse((event['lastUpdatedTime']))
                 str_update = str_update.strftime(str_ddb_format_sec)
+
+                affected_accounts = get_health_accounts(health_client,event, event_arn)
+                affected_entities = get_health_entities(health_client,event, event_arn)
 
                 # get event details
                 event_details = json.dumps(describe_event_details(health_client, event_arn), default=myconverter)
