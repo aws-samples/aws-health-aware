@@ -282,19 +282,30 @@ def get_health_accounts(health_client, event, event_arn):
     affected_accounts = []
     accounts_paginator = health_client.get_paginator('describe_affected_entities')
     event_accounts_page_iterator = accounts_paginator.paginate(
-        eventArn=event_arn
+        filter={
+            'eventArns': [
+                event_arn
+            ]
+        }
     )
     for event_accounts_page in event_accounts_page_iterator:
         json_event_accounts = json.dumps(event_accounts_page, default=myconverter)
         parsed_event_accounts = json.loads(json_event_accounts)
-        affected_accounts.append(parsed_event_accounts['entities'][0]['awsAccountId'])
+        try:
+            affected_accounts.append(parsed_event_accounts['entities'][0]['awsAccountId'])
+        except:
+            return affected_accounts
     return affected_accounts
 
 def get_health_entities(health_client, event, event_arn):
     affected_entities = []
     event_entities_paginator = health_client.get_paginator('describe_affected_entities')
     event_entities_page_iterator = event_entities_paginator.paginate(
-        eventArn=event_arn
+        filter={
+            'eventArns': [
+                event_arn
+            ]
+        }
     )
     for event_entities_page in event_entities_page_iterator:
         json_event_entities = json.dumps(event_entities_page, default=myconverter)
@@ -637,6 +648,7 @@ def describe_events(health_client):
 
     event_paginator = health_client.get_paginator('describe_events')
     event_page_iterator = event_paginator.paginate(filter=str_filter)
+
     for response in event_page_iterator:
         events = response.get('events', [])
         aws_events = json.dumps(events, default=myconverter)
