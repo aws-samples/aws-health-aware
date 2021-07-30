@@ -42,10 +42,9 @@ def get_account_name(account_id):
         account_name = org_client.describe_account(AccountId=account_id)['Account']['Name']
     except Exception:
         account_name = account_id
-
     return account_name
 
-def send_alert(event_details, event_type):
+def send_alert(event_details, affected_accounts, affected_entities, event_type):
     slack_url = get_secrets()["slack"]
     teams_url = get_secrets()["teams"]
     chime_url = get_secrets()["chime"]
@@ -277,24 +276,35 @@ def send_org_email(event_details, eventType, affected_org_accounts, affected_org
         },
     )
 
-# organization view affected accounts
+# non-organization view affected accounts
 def get_health_accounts(health_client, event, event_arn):
     affected_accounts = []
-    accounts_paginator = health_client.get_paginator('describe_affected_entities')
+    event_accounts_paginator = health_client.get_paginator('describe_affected_entities')
     event_accounts_page_iterator = event_accounts_paginator.paginate(
-        eventArn=event_arn
+        filter = {
+            'eventArns': [
+                event_arn
+            ]
+        }
     )
     for event_accounts_page in event_accounts_page_iterator:
         json_event_accounts = json.dumps(event_accounts_page, default=myconverter)
         parsed_event_accounts = json.loads(json_event_accounts)
-        affected_org_accounts = (parsed_event_accounts['entities'][0]['awsAccountId'])
+        try:
+          affected_accounts.append(parsed_event_accounts['entities'][0]['awsAccountId'])
+        except Exception:
+          affected_accounts = []
     return affected_accounts
 
 def get_health_entities(health_client, event, event_arn):
     affected_entities = []
     event_entities_paginator = health_client.get_paginator('describe_affected_entities')
     event_entities_page_iterator = event_entities_paginator.paginate(
-        eventArn=event_arn
+        filter = {
+            'eventArns': [
+                event_arn
+            ]
+        }
     )
     for event_entities_page in event_entities_page_iterator:
         json_event_entities = json.dumps(event_entities_page, default=myconverter)
@@ -429,6 +439,7 @@ def update_ddb(event_arn, str_update, status_code, event_details, affected_accou
     dynamodb = boto3.resource("dynamodb")
     ddb_table = os.environ['DYNAMODB_TABLE']
     aha_ddb_table = dynamodb.Table(ddb_table)
+    event_latestDescription = event_details['successfulSet'][0]['eventDescription']['latestDescription']
 
     # set time parameters
     delta_hours = os.environ['EVENT_SEARCH_BACK']
@@ -459,21 +470,25 @@ def update_ddb(event_arn, str_update, status_code, event_details, affected_accou
                     'arn': event_arn,
                     'lastUpdatedTime': str_update,
                     'added': sec_now,
-                    'ttl': int(sec_now) + delta_hours_sec + 86400
+                    'ttl': int(sec_now) + delta_hours_sec + 86400,
+                    'statusCode': status_code,
+                    'affectedAccountIDs': affected_accounts,
+                    'latestDescription': event_latestDescription
                     # Cleanup: DynamoDB entry deleted 24 hours after last update
                 }
             )
             affected_accounts_details = [
-                    f"{get_account_name(account_id)} ({account_id})" for account_id in affected_accounts]            
+                    f"{get_account_name(account_id)} ({account_id})" for account_id in affected_accounts]
             # send to configured endpoints
             if status_code != "closed":
-                send_alert(event_details, affected_accounts, affected_entities, event_type="create")
+                send_alert(event_details, affected_accounts_details, affected_entities, event_type="create")
             else:
-                send_alert(event_details, affected_accounts, affected_entities, event_type="resolve")
-
+                send_alert(event_details, affected_accounts_details, affected_entities, event_type="resolve")
         else:
             item = response['Item']
-            if item['lastUpdatedTime'] != str_update:
+            if item['lastUpdatedTime'] != str_update and (item['statusCode'] != status_code or
+                                                          item['latestDescription'] != event_latestDescription or
+                                                          item['affectedAccountIDs'] != affected_org_accounts):
                 print(datetime.now().strftime(srt_ddb_format_full) + ": last Update is different")
                 # write to dynamodb
                 response = aha_ddb_table.put_item(
@@ -481,10 +496,15 @@ def update_ddb(event_arn, str_update, status_code, event_details, affected_accou
                         'arn': event_arn,
                         'lastUpdatedTime': str_update,
                         'added': sec_now,
-                        'ttl': int(sec_now) + delta_hours_sec + 86400
+                        'ttl': int(sec_now) + delta_hours_sec + 86400,
+                        'statusCode': status_code,
+                        'affectedAccountIDs': affected_org_accounts,
+                        'latestDescription': event_latestDescription
                         # Cleanup: DynamoDB entry deleted 24 hours after last update
                     }
                 )
+                affected_accounts_details = [
+                    f"{get_account_name(account_id)} ({account_id})" for account_id in affected_accounts]
                 # send to configured endpoints
                 if status_code != "closed":
                     send_alert(event_details, affected_accounts_details, affected_entities, event_type="create")
@@ -492,7 +512,6 @@ def update_ddb(event_arn, str_update, status_code, event_details, affected_accou
                     send_alert(event_details, affected_accounts_details, affected_entities, event_type="resolve")
             else:
                 print("No new updates found, checking again in 1 minute.")
-
 
 def get_secrets():
     secret_teams_name = "MicrosoftChannelID"
@@ -648,6 +667,10 @@ def describe_events(health_client):
                 status_code = event['statusCode']
                 str_update = parser.parse((event['lastUpdatedTime']))
                 str_update = str_update.strftime(str_ddb_format_sec)
+
+                # get non-organizational view requirements
+                affected_accounts = get_health_accounts(health_client, event, event_arn)
+                affected_entities = get_health_entities(health_client, event, event_arn)
 
                 # get event details
                 event_details = json.dumps(describe_event_details(health_client, event_arn), default=myconverter)
