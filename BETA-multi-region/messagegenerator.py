@@ -12,6 +12,8 @@ def get_message_for_slack(event_details, event_type, affected_accounts, affected
     if slack_webhook == "webhook":
         if len(affected_entities) >= 1:
             affected_entities = "\n".join(affected_entities)
+            if affected_entities == "UNKNOWN":
+                affected_entities = "All resources\nin region"
         else:
             affected_entities = "All resources\nin region"
         if len(affected_accounts) >= 1:
@@ -69,6 +71,8 @@ def get_message_for_slack(event_details, event_type, affected_accounts, affected
     else:
         if len(affected_entities) >= 1:
             affected_entities = "\n".join(affected_entities)
+            if affected_entities == "UNKNOWN":
+                affected_entities = "All resources\nin region"
         else:
             affected_entities = "All resources in region"
         if len(affected_accounts) >= 1:
@@ -116,6 +120,8 @@ def get_message_for_eventbridge(event_details, event_type, affected_accounts, af
     message = ""
     if len(affected_entities) >= 1:
         affected_entities = "\n".join(affected_entities)
+        if affected_entities == "UNKNOWN":
+            affected_entities = "All resources\nin region"
     else:
         affected_entities = "All resources\nin region"
     if len(affected_accounts) >= 1:
@@ -323,6 +329,8 @@ def get_message_for_chime(event_details, event_type, affected_accounts, affected
     message = ""
     if len(affected_entities) >= 1:
         affected_entities = "\n".join(affected_entities)
+        if affected_entities == "UNKNOWN":
+            affected_entities = "All resources\nin region"
     else:
         affected_entities = "All resources\nin region"
     if len(affected_accounts) >= 1:
@@ -411,6 +419,8 @@ def get_message_for_teams(event_details, event_type, affected_accounts, affected
     message = ""
     if len(affected_entities) >= 1:
         affected_entities = "\n".join(affected_entities)
+        if affected_entities == "UNKNOWN":
+            affected_entities = "All resources\nin region"
     else:
         affected_entities = "All resources\nin region"
     if len(affected_accounts) >= 1:
@@ -546,6 +556,16 @@ def get_org_message_for_teams(event_details, event_type, affected_org_accounts, 
 
 
 def get_message_for_email(event_details, event_type, affected_accounts, affected_entities):
+    if len(affected_entities) >= 1:
+        affected_entities = "\n".join(affected_entities)
+        if affected_entities == "UNKNOWN":
+            affected_entities = "All resources\nin region"
+    else:
+        affected_entities = "All resources\nin region"
+    if len(affected_accounts) >= 1:
+        affected_accounts = "\n".join(affected_accounts)
+    else:
+        affected_accounts = "All accounts\nin region"
     if event_type == "create":
         BODY_HTML = f"""
         <html>
