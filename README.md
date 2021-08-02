@@ -16,6 +16,7 @@
   * [AHA for users WITHOUT AWS Organizations](#aha-without-aws-organizations)
   * [AHA for users WITH AWS Organizations](#aha-with-aws-organizations)    
 - [Updating](#updating)
+- [New Features] (#new-features)
 - [Troubleshooting](#troubleshooting)
 - New Features!
 
@@ -220,6 +221,15 @@ The 2 deployment methods for AHA are:
 6. At the next screen **click** *Next* and finally **click** *Update stack*. This will now upgrade your environment to the latest version you downloaded.
 
 **If for some reason, you still have issues after updating, you can easily just delete the stack and redeploy. The infrastructure can be destroyed and rebuilt within minutes through CloudFormation.**
+
+# New Features
+We are happy to announce the launch of new enhancements to AHA. Please try them out and keep sendings us your feedback!
+1. Multi-region deployment (Available in BETA)
+2. Ability to filter accounts (Refer to AccountIDs CFN parameter for more info on how to exclude accounts from AHA notifications)
+3. Ability to view Account Names for a given Account ID in the PHD alerts
+4. If you are running AHA with the Non-Org mode, AHA will send the Account #' and resource(s) impacts if applicable for a given alert
+5. Ability to deploy AHA with the Org mode on a member account
+6. Support for a new Health Event Type - "Investigation"
 
 # Troubleshooting
 * If for whatever reason you need to update the Webhook URL; just update the CloudFormation Template with the new Webhook URL.
