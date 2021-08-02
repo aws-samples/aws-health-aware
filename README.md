@@ -16,7 +16,7 @@
   * [AHA for users WITHOUT AWS Organizations](#aha-without-aws-organizations)
   * [AHA for users WITH AWS Organizations](#aha-with-aws-organizations)    
 - [Updating](#updating)
-- [New Features] (#new-features)
+- [New Features](#new-features)
 - [Troubleshooting](#troubleshooting)
 
 # Introduction
