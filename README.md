@@ -165,8 +165,8 @@ The 2 deployment methods for AHA are:
 7. -In *Stack name* type a stack name (i.e. AHA-Deployment).
 -In *AWSOrganizationsEnabled* change the dropdown to `Yes`. If you do NOT have AWS Organizations enabled you should be following the steps for [AHA for users who are NOT using AWS Organizations](#aha-without-aws-organizations)  
 -In *AWSHealthEventType* select whether you want to receive *all* event types or *only* issues.   
--In *S3Bucket* type ***just*** the bucket name of the S3 bucket used in step 3  (e.g. my-aha-bucket).    
--In *S3Key* type ***just*** the name of the .zip file you created in Step 2 (e.g. aha-v1.8.zip).     
+-In *S3Bucket* type ***S3BucketName*** the bucket name of the S3 bucket used in step 3  (e.g. my-aha-bucket).    
+-In *S3Key* type ***.zipfileName*** the name of the .zip file you created in Step 2 (e.g. aha-v1.8.zip).     
 -In the *Communications Channels* section enter the URLs, Emails and/or ARN of the endpoints you configured previously.  
 -In the *Email Setup* section enter the From and To Email addresses as well as the Email subject. If you aren't configuring email, just leave it as is.
 -In *EventSearchBack* enter in the amount of hours you want to search back for events. Default is 1 hour.  
@@ -178,10 +178,11 @@ The 2 deployment methods for AHA are:
 
 ### Deployment in AWS Organization (Member Account - Requires Additional Setup than the Default Options!)
 
-1. In your top-level management account AWS console go to *CloudFormation*
-2. In the *CloudFormation* console **click** *Create stack > With new resources (standard)*.
-3. Under *Template Source* **click** *Upload a template file* and **click** *Choose file*  and select `01_CFN_MGMT_ROLE.yml` **Click** *Next*.
-4. -In *Stack name* type a stack name (i.e. aha-assume-role).
+1. Clone the AHA package that from this repository. If you're not familiar with the process, [here](https://git-scm.com/docs/git-clone) is some documentation. The URL to clone is in the upper right-hand corner labeled `Clone uri`
+2. In your top-level management account AWS console go to *CloudFormation*
+3. In the *CloudFormation* console **click** *Create stack > With new resources (standard)*.
+4. Under *Template Source* **click** *Upload a template file* and **click** *Choose file*  and select `01_CFN_MGMT_ROLE.yml` **Click** *Next*.
+5. -In *Stack name* type a stack name (i.e. aha-assume-role).
 -In *OrgMemberAccountId* put in the account id of the member account you plan to run AHA in (e.g. 000123456789).
 5. Scroll to the bottom and **click** *Next*.
 6. Scroll to the bottom and **click** *Next* again.
@@ -189,15 +190,15 @@ The 2 deployment methods for AHA are:
 8. Wait until *Status* changes to *CREATE_COMPLETE* (roughly 1-2 minutes). This will create an IAM role with the necessary AWS Organizations and AWS Health API permissions for the member account to assume.
 9. In the *Outputs* tab, there will be a value for *AWSHealthAwareRoleForPHDEventsArn* (e.g. arn:aws:iam::000123456789:role/aha-org-role-AWSHealthAwareRoleForPHDEvents-ABCSDE12201), copy that down as you will need it for step 16.
 10. Back In the root of the package you downloaded/cloned you'll have two files; `handler.py` and `messagegenerator.py`. Use your tool of choice to zip them both up and name them with a unique name (e.g. aha-v1.8.zip). **Note: Putting the version number in the name will make upgrading AHA seamless.**
-11. Upload the .zip you created in Step 11 to an S3 in the same region you plan to deploy this in.
+11. Upload the .zip you created in Step 10 to an S3 in the same region you plan to deploy this in.
 12. Login to the member account you plan to deploy this in and in your AWS console go to *CloudFormation*.
 13. In the *CloudFormation* console **click** *Create stack > With new resources (standard)*.
 14. Under *Template Source* **click** *Upload a template file* and **click** *Choose file*  and select `02_CFN_DEPLOY_AHA.yml` **Click** *Next*.
-15. -In *Stack name* type a stack name (i.e. AHA-Deployment).
+-In *Stack name* type a stack name (i.e. AHA-Deployment).
 -In *AWSOrganizationsEnabled* change the dropdown to `Yes`. If you do NOT have AWS Organizations enabled you should be following the steps for [AHA for users who are NOT using AWS Organizations](#aha-without-aws-organizations)
 -In *AWSHealthEventType* select whether you want to receive *all* event types or *only* issues.
--In *S3Bucket* type ***just*** the bucket name of the S3 bucket used in step 12  (e.g. my-aha-bucket).
--In *S3Key* type ***just*** the name of the .zip file you created in Step 11 (e.g. aha-v1.8.zip).
+-In *S3Bucket* type ***S3bucketName*** the bucket name of the S3 bucket used in step 11  (e.g. my-aha-bucket).
+-In *S3Key* type ***.zipfileName*** the name of the .zip file you created in Step 10 (e.g. aha-v1.8.zip).
 -In the *Communications Channels* section enter the URLs, Emails and/or ARN of the endpoints you configured previously.
 -In the *Email Setup* section enter the From and To Email addresses as well as the Email subject. If you aren't configuring email, just leave it as is.
 -In *EventSearchBack* enter in the amount of hours you want to search back for events. Default is 1 hour.
