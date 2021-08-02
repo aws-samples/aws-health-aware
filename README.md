@@ -18,7 +18,6 @@
 - [Updating](#updating)
 - [New Features] (#new-features)
 - [Troubleshooting](#troubleshooting)
-- New Features!
 
 # Introduction
 AWS Health Aware (AHA) is an automated notification tool for sending well-formatted AWS Health Alerts to Amazon Chime, Slack, Microsoft Teams, E-mail or an AWS Eventbridge compatible endpoint as long as you have Business or Enterprise Support.
