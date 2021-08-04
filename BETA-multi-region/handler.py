@@ -488,7 +488,7 @@ def update_ddb(event_arn, str_update, status_code, event_details, affected_accou
             item = response['Item']
             if item['lastUpdatedTime'] != str_update and (item['statusCode'] != status_code or
                                                           item['latestDescription'] != event_latestDescription or
-                                                          item['affectedAccountIDs'] != affected_org_accounts):
+                                                          item['affectedAccountIDs'] != affected_accounts):
                 print(datetime.now().strftime(srt_ddb_format_full) + ": last Update is different")
                 # write to dynamodb
                 response = aha_ddb_table.put_item(
@@ -498,7 +498,7 @@ def update_ddb(event_arn, str_update, status_code, event_details, affected_accou
                         'added': sec_now,
                         'ttl': int(sec_now) + delta_hours_sec + 86400,
                         'statusCode': status_code,
-                        'affectedAccountIDs': affected_org_accounts,
+                        'affectedAccountIDs': affected_accounts,
                         'latestDescription': event_latestDescription
                         # Cleanup: DynamoDB entry deleted 24 hours after last update
                     }
