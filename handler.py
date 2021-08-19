@@ -223,13 +223,13 @@ def send_to_teams(message, webhookurl):
         print("Server connection failed: ", e.reason, e.reason)
 
 
-def send_email(event_details, eventType):
+def send_email(event_details, eventType, affected_accounts, affected_entities):
     SENDER = os.environ['FROM_EMAIL']
     RECIPIENT = os.environ['TO_EMAIL'].split(",")
     #AWS_REGIONS = "us-east-1"
     AWS_REGION = os.environ['AWS_REGION']
     SUBJECT = os.environ['EMAIL_SUBJECT']
-    BODY_HTML = get_message_for_email(event_details, eventType)
+    BODY_HTML = get_message_for_email(event_details, eventType, affected_accounts, affected_entities)
     client = boto3.client('ses', region_name=AWS_REGION)
     response = client.send_email(
         Source=SENDER,
