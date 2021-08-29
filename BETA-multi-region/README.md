@@ -4,6 +4,9 @@
 # Introduction
 Our next most requested feature was the ability to deploy AHA in more than 1 region in the event a region or specific service in a region was degraded. The process is currently **IN BETA** so we ask that you log any issues in this repo.
 
+# Architecture
+![](https://github.com/aws-samples/aws-health-aware/blob/main/readme-images/aha-arch-multi-region.png?raw=1)
+
 # Configuring an Endpoint - 
 AHA can send to multiple endpoints (webhook URLs, Email or EventBridge). To use any of these you'll need to set it up before-hand as some of these are done on 3rd party websites. We'll go over some of the common ones here.
 
