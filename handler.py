@@ -728,25 +728,44 @@ def describe_org_events(health_client):
                 status_code = event['statusCode']
                 str_update = parser.parse((event['lastUpdatedTime']))
                 str_update = str_update.strftime(str_ddb_format_sec)
-
+                
                 # get organizational view requirements
                 affected_org_accounts = get_health_org_accounts(health_client, event, event_arn)
-                affected_org_entities = get_health_org_entities(health_client, event, event_arn, affected_org_accounts)
+                if os.environ['ACCOUNT_IDS'] == "None" or os.environ['ACCOUNT_IDS'] == "":
+                    affected_org_accounts = affected_org_accounts
+                    update_org_ddb_flag=True
+                else:
+                    account_ids_to_filter = getAccountIDs()
+                    if affected_org_accounts != []:
+                        focused_org_accounts = [i for i in affected_org_accounts if i not in account_ids_to_filter]
+                        print("Focused list is ", focused_org_accounts)
+                        if focused_org_accounts != []:
+                            update_org_ddb_flag=True
+                            affected_org_accounts = focused_org_accounts
+                        else:
+                            update_org_ddb_flag=False
+                            print("Focused Organization Account list is empty")
+                    else:
+                        update_org_ddb_flag=True
 
+                affected_org_entities = get_health_org_entities(health_client, event, event_arn, affected_org_accounts)
                 # get event details
                 event_details = json.dumps(describe_org_event_details(health_client, event_arn, affected_org_accounts),
-                                           default=myconverter)
+                                        default=myconverter)
                 event_details = json.loads(event_details)
                 print("Event Details: ", event_details)
                 if event_details['successfulSet'] == []:
                     print("An error occured with account:", event_details['failedSet'][0]['awsAccountId'], "due to:",
-                          event_details['failedSet'][0]['errorName'], ":",
-                          event_details['failedSet'][0]['errorMessage'])
+                        event_details['failedSet'][0]['errorName'], ":",
+                        event_details['failedSet'][0]['errorMessage'])
                     continue
                 else:
                     # write to dynamoDB for persistence
-                    update_org_ddb(event_arn, str_update, status_code, event_details, affected_org_accounts,
-                                   affected_org_entities)
+                    if update_org_ddb_flag:
+                        update_org_ddb(event_arn, str_update, status_code, event_details, affected_org_accounts,
+                                    affected_org_entities)
+        else:
+            print("No events found in time frame, checking again in 1 minute.")
 
 def myconverter(json_object):
     if isinstance(json_object, datetime):
@@ -784,6 +803,19 @@ def send_to_eventbridge(message, event_type, event_bus):
         {'Source': 'aha', 'DetailType': event_type, 'Detail': '{ "mydata": ' + json.dumps(message) + ' }',
          'EventBusName': event_bus}, ])
     print("Response is:", response)
+    
+def getAccountIDs():
+    account_ids  = ""
+    key_file_name = os.environ['ACCOUNT_IDS']
+    print("Key filename is - ", key_file_name)
+    if os.path.splitext(os.path.basename(key_file_name))[1] == '.csv':
+        s3 = boto3.client('s3')
+        data = s3.get_object(Bucket=os.environ['S3_BUCKET'], Key=key_file_name)
+        account_ids = [account.decode('utf-8') for account in data['Body'].iter_lines()]
+    else:
+        print("Key filename is not a .csv file")
+    print(account_ids)
+    return account_ids
 
 def get_sts_token(service):
     assumeRoleArn = get_secrets()["ahaassumerole"]

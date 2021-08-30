@@ -34,6 +34,7 @@ Metadata:
           - EventSearchBack
           - Regions
           - ManagementAccountRoleArn
+          - SecondaryRegion
           - AccountIDs
     ParameterLabels:
       AWSOrganizationsEnabled:
@@ -62,8 +63,10 @@ Metadata:
         default: Hours back to search for events
       Regions:
         default: Which regions to search for events in
+      SecondaryRegion:
+        default: Deploy in secondary region?
       AccountIDs:
-        default: Exclude any account numbers?
+        default: Exclude any account numbers?        
 Conditions:
   UsingSlack: !Not [!Equals [!Ref SlackWebhookURL, None]]
   UsingTeams: !Not [!Equals [!Ref MicrosoftTeamsWebhookURL, None]]
@@ -71,6 +74,14 @@ Conditions:
   UsingEventBridge: !Not [!Equals [!Ref EventBusName, None]]
   UsingSecrets: !Or [!Condition UsingSlack, !Condition UsingTeams, !Condition UsingChime, !Condition UsingEventBridge, !Condition UsingCrossAccountRole]
   UsingCrossAccountRole: !Not [!Equals [!Ref ManagementAccountRoleArn, None]]
+  NotUsingMultiRegion: !Equals [!Ref SecondaryRegion, 'No']
+  UsingMultiRegion: !Not [!Equals [!Ref SecondaryRegion, 'No']]
+  TestCondition: !Equals ['true', 'false']
+  UsingMultiRegionTeams: !And [!Condition UsingTeams, !Condition UsingMultiRegion]
+  UsingMultiRegionSlack: !And [!Condition UsingSlack, !Condition UsingMultiRegion]
+  UsingMultiRegionEventBridge: !And [!Condition UsingEventBridge, !Condition UsingMultiRegion]
+  UsingMultiRegionChime: !And [!Condition UsingChime, !Condition UsingMultiRegion]
+  UsingMultiRegionCrossAccountRole: !And [!Condition UsingCrossAccountRole, !Condition UsingMultiRegion]
   UsingAccountIds: !Not [!Equals [!Ref AccountIDs, None]]  
 Parameters:
   AWSOrganizationsEnabled:
@@ -85,6 +96,29 @@ Parameters:
       - 'Yes'
       - 'No'
     Type: String
+  SecondaryRegion:
+    Description: You can deploy this in a secondary region for resiliency. As a result,
+      the DynamoDB table will become a Global DynamoDB table. Regions that support
+      Global DynamoDB tables are listed
+    Default: 'No'
+    AllowedValues:
+    - 'No'
+    - us-east-1
+    - us-east-2
+    - us-west-1
+    - us-west-2
+    - ap-south-1
+    - ap-northeast-2
+    - ap-southeast-1
+    - ap-southeast-2
+    - ap-northeast-1
+    - ca-central-1
+    - eu-central-1
+    - eu-west-1
+    - eu-west-2
+    - eu-west-3
+    - sa-east-1
+    Type: String    
   ManagementAccountRoleArn:
     Description: Arn of the IAM role in the top-level management account for collecting PHD Events. 'None' if deploying into the top-level management account.
     Type: String
@@ -174,6 +208,214 @@ Parameters:
     Type: String
     Default: AWS Health Alert
 Resources:
+  GlobalDDBTable:
+    Type: AWS::DynamoDB::GlobalTable
+    Condition: UsingMultiRegion
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: arn
+        AttributeType: S
+      KeySchema:
+      - AttributeName: arn
+        KeyType: HASH
+      Replicas:
+      - Region: !Ref SecondaryRegion
+        ReadProvisionedThroughputSettings:
+          ReadCapacityUnits: 5
+      - Region: !Ref "AWS::Region"
+        ReadProvisionedThroughputSettings:
+          ReadCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: "NEW_AND_OLD_IMAGES"
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      WriteProvisionedThroughputSettings:
+        WriteCapacityAutoScalingSettings:
+          MaxCapacity: 10
+          MinCapacity: 10
+          TargetTrackingScalingPolicyConfiguration:
+            DisableScaleIn: false
+            ScaleInCooldown: 30
+            ScaleOutCooldown: 30
+            TargetValue: 10
+  DynamoDBTable:
+    Type: 'AWS::DynamoDB::Table'
+    Condition: NotUsingMultiRegion
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: arn
+          AttributeType: S
+      KeySchema:
+        - AttributeName: arn
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: TRUE        
+  AHASecondaryRegionStackSet:
+    Condition: UsingMultiRegion
+    DependsOn: GlobalDDBTable
+    Type: AWS::CloudFormation::StackSet
+    Properties:
+      Description: Secondary Region CloudFormation Template for AWS Health Aware (AHA)
+      PermissionModel: SELF_MANAGED 
+      Capabilities: [CAPABILITY_IAM]
+      StackInstancesGroup:
+          - Regions:
+              - !Ref 'SecondaryRegion'
+            DeploymentTargets:
+              Accounts:
+                - !Ref 'AWS::AccountId'
+      StackSetName: 'aha-multi-region'
+      TemplateBody: 
+        !Sub |
+          Resources:
+              AHA2ndRegionBucket:
+                Type: AWS::S3::Bucket 
+              CopyAHA:
+                Type: Custom::CopyAHA
+                Properties:
+                  DestBucket: !Ref 'AHA2ndRegionBucket'
+                  ServiceToken: !GetAtt 'CopyAHAFunction.Arn'
+                  SourceBucket: ${S3Bucket}
+                  Object:
+                    - ${S3Key}
+              CopyAHARole:
+                Type: AWS::IAM::Role
+                Properties:
+                  AssumeRolePolicyDocument:
+                    Version: '2012-10-17'
+                    Statement:
+                      - Effect: Allow
+                        Principal:
+                          Service: lambda.amazonaws.com
+                        Action: sts:AssumeRole
+                  ManagedPolicyArns:
+                    - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+                  Path: /
+                  Policies:
+                    - PolicyName: aha-lambda-copier
+                      PolicyDocument:
+                        Version: '2012-10-17'
+                        Statement:
+                          - Effect: Allow
+                            Action:
+                              - s3:GetObject
+                            Resource:
+                              - 'arn:aws:s3:::${S3Bucket}*'
+                          - Effect: Allow
+                            Action:
+                              - s3:PutObject
+                              - s3:DeleteObject
+                            Resource:
+                              - !Join ['', [ 'arn:aws:s3:::', !Ref AHA2ndRegionBucket, '*']]
+              CopyAHAFunction:
+                Type: AWS::Lambda::Function
+                DependsOn: AHA2ndRegionBucket
+                Properties:
+                  Description: Copies AHA .zip from a source S3 bucket to a destination
+                  Handler: index.handler
+                  Runtime: python3.8
+                  Role: !GetAtt 'CopyAHARole.Arn'
+                  Timeout: 240
+                  Code:
+                    ZipFile: |
+                      import json
+                      import logging
+                      import threading
+                      import boto3
+                      import cfnresponse
+ 
+                      def copy_object(source_bucket, dest_bucket, object):
+                          s3 = boto3.client('s3')
+                          for o in object:
+                              key = o
+                              copy_source = {
+                                  'Bucket': source_bucket,
+                                  'Key': key
+                              }
+                              print('copy_source: %s' % copy_source)
+                              print('dest_bucket = %s'%dest_bucket)
+                              print('key = %s' %key)
+                              s3.copy_object(CopySource=copy_source, Bucket=dest_bucket,
+                                    Key=key)
+ 
+                      def delete_object(bucket, object):
+                          s3 = boto3.client('s3')
+                          objects = {'Objects': [{'Key': o} for o in object]}
+                          s3.delete_objects(Bucket=bucket, Delete=objects)
+ 
+                      def timeout(event, context):
+                          logging.error('Execution is about to time out, sending failure response to CloudFormation')
+                          cfnresponse.send(event, context, cfnresponse.FAILED, {}, None)
+ 
+                      def handler(event, context):
+                          # make sure we send a failure to CloudFormation if the function
+                          # is going to timeout
+                          timer = threading.Timer((context.get_remaining_time_in_millis()
+                                    / 1000.00) - 0.5, timeout, args=[event, context])
+                          timer.start()
+ 
+                          print('Received event: %s' % json.dumps(event))
+                          status = cfnresponse.SUCCESS
+                          try:
+                              source_bucket = event['ResourceProperties']['SourceBucket']
+                              dest_bucket = event['ResourceProperties']['DestBucket']
+                              object = event['ResourceProperties']['Object']
+                              if event['RequestType'] == 'Delete':
+                                  delete_object(dest_bucket, object)
+                              else:
+                                  copy_object(source_bucket, dest_bucket, object)
+                          except Exception as e:
+                              logging.error('Exception: %s' % e, exc_info=True)
+                              status = cfnresponse.FAILED
+                          finally:
+                              timer.cancel()
+                              cfnresponse.send(event, context, status, {}, None)
+              LambdaSchedule:
+                Type: AWS::Events::Rule
+                Properties:
+                  Description: Lambda trigger Event
+                  ScheduleExpression: rate(1 minute)
+                  State: ENABLED
+                  Targets:
+                  - Arn: !GetAtt 'LambdaFunction.Arn'
+                    Id: LambdaSchedule
+              LambdaSchedulePermission:
+                Type: AWS::Lambda::Permission
+                Properties:
+                  Action: lambda:InvokeFunction
+                  FunctionName: !GetAtt 'LambdaFunction.Arn'
+                  Principal: events.amazonaws.com
+                  SourceArn: !GetAtt 'LambdaSchedule.Arn'           
+              LambdaFunction:
+                Type: AWS::Lambda::Function
+                DependsOn: CopyAHA
+                Properties:
+                  Description: Lambda function that runs AHA
+                  Code:
+                    S3Bucket:
+                      Ref: AHA2ndRegionBucket
+                    S3Key: "${S3Key}"
+                  Handler: handler.main
+                  MemorySize: 128
+                  Timeout: 600
+                  Role: ${LambdaExecutionRole.Arn}
+                  Runtime: python3.8
+                  Environment:
+                    Variables:
+                      REGIONS: ${Regions}
+                      FROM_EMAIL: "${FromEmail}"
+                      TO_EMAIL: "${ToEmail}"
+                      EMAIL_SUBJECT: "${Subject}"
+                      DYNAMODB_TABLE: "${GlobalDDBTable}"
+                      EVENT_SEARCH_BACK: ${EventSearchBack}
+                      ORG_STATUS: ${AWSOrganizationsEnabled}
+                      HEALTH_EVENT_TYPE: "${AWSHealthEventType}"
+                      MANAGEMENT_ROLE_ARN: "${ManagementAccountRoleArn}"
   LambdaExecutionRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -197,7 +439,9 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+                Resource: 
+                  - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+                  - !If [UsingMultiRegion, !Sub 'arn:aws:logs:${SecondaryRegion}:${AWS::AccountId}:*', !Ref AWS::NoValue]
               - !If 
                 - UsingSecrets
                 - Effect: Allow
@@ -211,7 +455,37 @@ Resources:
                    - !If [UsingSlack, !Sub '${SlackChannelSecret}', !Ref AWS::NoValue]
                    - !If [UsingEventBridge, !Sub '${EventBusNameSecret}', !Ref AWS::NoValue]
                    - !If [UsingChime, !Sub '${ChimeChannelSecret}', !Ref AWS::NoValue]
-                   - !If [UsingCrossAccountRole, !Sub '${AssumeRoleSecret}', !Ref AWS::NoValue]                   
+                   - !If [UsingCrossAccountRole, !Sub '${AssumeRoleSecret}', !Ref AWS::NoValue]      
+                   - !If
+                     - UsingMultiRegionTeams
+                     - !Sub 
+                       - 'arn:aws:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}' 
+                       - { SecretNameWithSha: !Select [1, !Split [':secret:', !Sub '${MicrosoftChannelSecret}' ]]}
+                     - !Ref AWS::NoValue
+                   - !If
+                     - UsingMultiRegionSlack
+                     - !Sub 
+                       - 'arn:aws:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}' 
+                       - { SecretNameWithSha: !Select [1, !Split [':secret:', !Sub '${SlackChannelSecret}' ]]}
+                     - !Ref AWS::NoValue
+                   - !If
+                     - UsingMultiRegionEventBridge
+                     - !Sub 
+                       - 'arn:aws:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}' 
+                       - { SecretNameWithSha: !Select [1, !Split [':secret:', !Sub '${EventBusNameSecret}' ]]}
+                     - !Ref AWS::NoValue
+                   - !If
+                     - UsingMultiRegionChime
+                     - !Sub 
+                       - 'arn:aws:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}' 
+                       - { SecretNameWithSha: !Select [1, !Split [':secret:', !Sub '${ChimeChannelSecret}' ]]}
+                     - !Ref AWS::NoValue
+                   - !If
+                     - UsingMultiRegionCrossAccountRole
+                     - !Sub 
+                       - 'arn:aws:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}' 
+                       - { SecretNameWithSha: !Select [1, !Split [':secret:', !Sub '${AssumeRoleSecret}' ]]}
+                     - !Ref AWS::NoValue
                 - !Ref 'AWS::NoValue'
               - Effect: Allow
                 Action:
@@ -224,16 +498,20 @@ Resources:
                   - health:DescribeEventTypes
                   - health:DescribeAffectedEntities
                   - organizations:ListAccounts
-                  - organizations:DescribeAccount  
+                  - organizations:DescribeAccount                  
                 Resource: "*"                               
               - Effect: Allow
                 Action:
                   - dynamodb:ListTables
-                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:*'
+                Resource: 
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:*'
+                  - !If [UsingMultiRegion, !Sub 'arn:aws:dynamodb:${SecondaryRegion}:${AWS::AccountId}:*', !Ref AWS::NoValue]
               - Effect: Allow
                 Action:
                   - ses:SendEmail
-                Resource: !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:*'  
+                Resource: 
+                  - !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:*'
+                  - !If [UsingMultiRegion, !Sub 'arn:aws:ses:${SecondaryRegion}:${AWS::AccountId}:*', !Ref AWS::NoValue]
               - Effect: Allow
                 Action:
                   - dynamodb:UpdateTimeToLive
@@ -245,18 +523,20 @@ Resources:
                   - dynamodb:UpdateItem
                   - dynamodb:UpdateTable
                   - dynamodb:GetRecords
-                Resource: !GetAtt DynamoDBTable.Arn
+                Resource: !If [UsingMultiRegion, !GetAtt GlobalDDBTable.Arn, !GetAtt DynamoDBTable.Arn]
               - Effect: Allow
                 Action:
                   - events:PutEvents
-                Resource: !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${EventBusName}'
+                Resource: 
+                  - !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${EventBusName}'
+                  - !If [UsingMultiRegion, !Sub 'arn:aws:events:${SecondaryRegion}:${AWS::AccountId}:event-bus/${EventBusName}', !Ref AWS::NoValue]
               - !If 
                 - UsingAccountIds
                 - Effect: Allow
                   Action:
                     - s3:GetObject
                   Resource: !Sub 'arn:aws:s3:::${S3Bucket}/${AccountIDs}'
-                - !Ref 'AWS::NoValue'                
+                - !Ref 'AWS::NoValue'                     
               - !If 
                 - UsingCrossAccountRole
                 - Effect: Allow
@@ -264,21 +544,6 @@ Resources:
                     - sts:AssumeRole
                   Resource: !Ref ManagementAccountRoleArn
                 - !Ref 'AWS::NoValue'                
-  DynamoDBTable:
-    Type: 'AWS::DynamoDB::Table'
-    Properties:
-      AttributeDefinitions:
-        - AttributeName: arn
-          AttributeType: S
-      KeySchema:
-        - AttributeName: arn
-          KeyType: HASH
-      ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
-      TimeToLiveSpecification:
-        AttributeName: ttl
-        Enabled: TRUE
   LambdaSchedule:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -301,6 +566,11 @@ Resources:
     Properties:
       Name: MicrosoftChannelID
       Description: Microsoft Channel ID Secret
+      ReplicaRegions:
+        !If 
+        - UsingMultiRegion
+        - [{ Region: !Sub '${SecondaryRegion}' }]
+        - !Ref "AWS::NoValue"
       SecretString:
         Ref: MicrosoftTeamsWebhookURL
       Tags:
@@ -312,6 +582,11 @@ Resources:
     Properties:
       Name: SlackChannelID
       Description: Slack Channel ID Secret
+      ReplicaRegions:
+        !If 
+        - UsingMultiRegion
+        - [{ Region: !Sub '${SecondaryRegion}' }]
+        - !Ref "AWS::NoValue"
       SecretString:
         Ref: SlackWebhookURL
       Tags:
@@ -323,6 +598,11 @@ Resources:
     Properties:
       Name: EventBusName
       Description: EventBus Name Secret
+      ReplicaRegions:
+        !If 
+        - UsingMultiRegion
+        - [{ Region: !Sub '${SecondaryRegion}' }]
+        - !Ref "AWS::NoValue"
       SecretString:
         Ref: EventBusName
       Tags:
@@ -334,6 +614,11 @@ Resources:
     Properties:
       Name: ChimeChannelID
       Description: Chime Channel ID Secret
+      ReplicaRegions:
+        !If 
+        - UsingMultiRegion
+        - [{ Region: !Sub '${SecondaryRegion}' }]
+        - !Ref "AWS::NoValue"
       SecretString:
         Ref: AmazonChimeWebhookURL
       Tags:
@@ -345,6 +630,11 @@ Resources:
     Properties:
       Name: AssumeRoleArn
       Description: Management account role for AHA to assume
+      ReplicaRegions:
+        !If 
+        - UsingMultiRegion
+        - [{ Region: !Sub '${SecondaryRegion}' }]
+        - !Ref "AWS::NoValue"
       SecretString:
         Ref: ManagementAccountRoleArn
       Tags:
@@ -380,15 +670,13 @@ Resources:
           EMAIL_SUBJECT:
             Ref: Subject
           DYNAMODB_TABLE:
-            Ref: DynamoDBTable
+            !If [UsingMultiRegion, !Ref GlobalDDBTable, !Ref DynamoDBTable]
           EVENT_SEARCH_BACK:
             Ref: EventSearchBack
           ORG_STATUS:
             Ref: AWSOrganizationsEnabled
           HEALTH_EVENT_TYPE:
             Ref: AWSHealthEventType
-          MANAGEMENT_ROLE_ARN: 
-            !If
-              - UsingCrossAccountRole
-              - !Ref ManagementAccountRoleArn
-              - "None"
+          MANAGEMENT_ROLE_ARN:
+            Ref: ManagementAccountRoleArn
+              
