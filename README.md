@@ -113,7 +113,7 @@ There are 2 available ways to deploy AHA, both are done via the same CloudFormat
 
 The 2 deployment methods for AHA are:
 
-1. [**AHA for users NOT using AWS Organizations**](#aha-without-aws-organizations): Users NOT using AWS Organizations will be able to get Service Health Dashboard (SHD) events ONLY.
+1. [**AHA for users NOT using AWS Organizations**](#aha-without-aws-organizations): Users NOT using AWS Organizations will be able to get Service Health Dashboard (SHD) events AND Personal Health Dashboard (PHD) events specific to the account that AHA has been deployed.
 2. [**AHA for users who ARE using AWS Organizations**](#aha-with-aws-organizations): Users who ARE using AWS Organizations will be able to get Service Health Dashboard (SHD) events AND aggregated Personal Health Dashboard (PHD) events for all accounts in their AWS Organization. This option offers two deployment methods –
 
     DEPLOYMENT IN AWS MANAGEMENT ACCOUNT (Available by default when customers select “Yes” for IsOrganizationsEnabled )
