@@ -617,7 +617,7 @@ def get_org_message_for_email(event_details, event_type, affected_org_accounts, 
     if len(affected_org_entities) >= 1:
         affected_org_entities = "\n".join(affected_org_entities)
     else:
-        affected_org_entities = "All servicess related resources in region"
+        affected_org_entities = "All services related resources in region"
     if len(affected_org_accounts) >= 1:
         affected_org_accounts = "\n".join(affected_org_accounts)
     else:
