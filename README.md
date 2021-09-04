@@ -31,6 +31,9 @@ AWS Health Aware (AHA) is an automated notification tool for sending well-format
 ## Multi Region
 ![](https://github.com/aws-samples/aws-health-aware/blob/main/readme-images/aha-arch-multi-region.png?raw=1)
 
+
+## Created AWS Resources
+
 | Resource | Description                    |
 | ------------- | ------------------------------ |
 | `DynamoDBTable`      | DynamoDB Table used to store Event ARNs, updates and TTL       |
