@@ -26,10 +26,10 @@ AWS Health Aware (AHA) is an automated notification tool for sending well-format
 # Architecture
 
 ## Single Region
-![](https://code.amazon.com/packages/AHA/blobs/mainline/--/readme-images/aha-arch-single-region.png?raw=1)
+![](https://github.com/aws-samples/aws-health-aware/blob/main/readme-images/aha-arch-single-region.png?raw=1)
 
 ## Multi Region
-![](https://code.amazon.com/packages/AHA/blobs/mainline/--/readme-images/aha-arch-multi-region.png?raw=1)
+![](https://github.com/aws-samples/aws-health-aware/blob/main/readme-images/aha-arch-multi-region.png?raw=1)
 
 ## Created AWS Resources
 
