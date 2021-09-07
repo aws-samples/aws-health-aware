@@ -144,7 +144,7 @@ $ cd aws-health-aware/BETA-terraform/Terraform_DEPLOY_AHA
 2. Update parameters file **terraform.tfvars** as below
  - *aha_primary_region* - change to region where you want to deploy AHA solution
  - *aha_secondary_region* - Required if needed to deploy in AHA solution in multiple regions, change to another region (Secondary) where you want to deploy AHA solution, Otherwise leave to default empty value.
- - *AWSOrganizationsEnabled* - Leave it to default which is `No`. If you do have AWS Organizations enabled and you want to aggregate across all your accounts, you should be following the steps for [AHA for users who ARE using AWS Organizations (Management Account)](#aha-with-aws-organizations-on-management-account-using-terraform)] or [AHA for users WITH AWS Organizations (Member Account)](#aha-with-aws-organizations-on-member-account-using-terraform)
+ - *AWSOrganizationsEnabled* - Leave it to default which is `No`. If you do have AWS Organizations enabled and you want to aggregate across all your accounts, you should be following the steps for [AHA for users who ARE using AWS Organizations (Management Account)](#aha-with-aws-organizations-on-management-account-using-terraform) or [AHA for users WITH AWS Organizations (Member Account)](#aha-with-aws-organizations-on-member-account-using-terraform)
  - *AWSHealthEventType* - select whether you want to receive *all* event types or *only* issues.
  - *Communications Channels* section - enter the URLs, Emails and/or ARN of the endpoints you configured previously.
  - *Email Setup* section - enter the From and To Email addresses as well as the Email subject. If you aren't configuring email, just leave it as is.
