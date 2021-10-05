@@ -173,8 +173,8 @@ variable "ExcludeAccountIDs" {
 
 variable "SkipList" {
     description = "Skip sending alerts containing the following CSV list of strings e.g. AWS_VPN_SINGLE_TUNNEL_NOTIFICATION,AWS_VPN_REDUNDANCY_LOSS"
-    type        = string
-    default     = ""
+    type = string
+    default = ""
 }
 
 ##### Resources for AHA Solution created below.
