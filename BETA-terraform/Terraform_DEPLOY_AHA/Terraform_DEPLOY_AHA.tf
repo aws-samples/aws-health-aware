@@ -625,6 +625,7 @@ resource "aws_lambda_function" "AHA-LambdaFunction-PrimaryRegion" {
             "TO_EMAIL"            = var.ToEmail
             "MANAGEMENT_ROLE_ARN" = var.ManagementAccountRoleArn
             "ACCOUNT_IDS"         = var.ExcludeAccountIDs
+            "SKIP_LIST"           = var.SkipList
             "S3_BUCKET"           = join("",aws_s3_bucket.AHA-S3Bucket-PrimaryRegion[*].bucket)
         }
     }

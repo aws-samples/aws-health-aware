@@ -24,6 +24,8 @@ EventSearchBack="1"
 Regions="all regions"
 ManagementAccountRoleArn=""
 ExcludeAccountIDs=""
+# Skip sending alerts containing the following CSV list of strings e.g. AWS_VPN_SINGLE_TUNNEL_NOTIFICATION,AWS_VPN_REDUNDANCY_LOSS 
+SkipList=""
 
 # commands to apply changes
 # terraform init
