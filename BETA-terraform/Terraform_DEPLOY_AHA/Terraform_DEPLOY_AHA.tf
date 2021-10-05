@@ -171,6 +171,12 @@ variable "ExcludeAccountIDs" {
     description = "If you would like to EXCLUDE any accounts from alerting, enter a .csv filename created with comma-seperated account numbers. Sample AccountIDs file name: aha_account_ids.csv. If not, leave the default empty."
 }
 
+variable "SkipList" {
+    description = "Skip sending alerts containing the following CSV list of strings e.g. AWS_VPN_SINGLE_TUNNEL_NOTIFICATION,AWS_VPN_REDUNDANCY_LOSS"
+    type        = string
+    default     = ""
+}
+
 ##### Resources for AHA Solution created below.
 
 # Random id generator
