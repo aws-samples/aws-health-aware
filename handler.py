@@ -45,6 +45,14 @@ def get_account_name(account_id):
     return account_name
 
 def send_alert(event_details, affected_accounts, affected_entities, event_type):
+    # check for comma separated list of events to skip
+    if "SKIP_LIST" in os.environ:
+        skip_list_string = os.environ['SKIP_LIST']
+        skip_list = skip_list_string.split(",")
+        event_arn = event_details['successfulSet'][0]['event']['arn']
+        for skip in skip_list:
+            if skip in event_arn:
+                return
     slack_url = get_secrets()["slack"]
     teams_url = get_secrets()["teams"]
     chime_url = get_secrets()["chime"]
@@ -109,6 +117,14 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
             pass
 
 def send_org_alert(event_details, affected_org_accounts, affected_org_entities, event_type):
+    # check for comma separated list of events to skip
+    if "SKIP_LIST" in os.environ:
+        skip_list_string = os.environ['SKIP_LIST']
+        skip_list = skip_list_string.split(",")
+        event_arn = event_details['successfulSet'][0]['event']['arn']
+        for skip in skip_list:
+            if skip in event_arn:
+                return
     slack_url = get_secrets()["slack"]
     teams_url = get_secrets()["teams"]
     chime_url = get_secrets()["chime"]
