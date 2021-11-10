@@ -200,7 +200,7 @@ resource "aws_s3_bucket" "AHA-S3Bucket-PrimaryRegion" {
     bucket     = "aha-bucket-${var.aha_primary_region}-${random_string.resource_code.result}"
     acl        = "private"
     tags = {
-      Name        = "aha-bucket-${random_string.resource_code.result}"
+      Name        = "aha-bucket"
     }
 }
 
@@ -210,7 +210,7 @@ resource "aws_s3_bucket" "AHA-S3Bucket-SecondaryRegion" {
     bucket     = "aha-bucket-${var.aha_secondary_region}-${random_string.resource_code.result}"
     acl        = "private"
     tags = {
-      Name        = "aha-bucket-${random_string.resource_code.result}"
+      Name        = "aha-bucket"
     }
 }
 
@@ -220,7 +220,7 @@ resource "aws_s3_bucket_object" "AHA-S3Object-PrimaryRegion" {
     bucket     = aws_s3_bucket.AHA-S3Bucket-PrimaryRegion[0].bucket
     source     = var.ExcludeAccountIDs
     tags = {
-      Name        = "${var.ExcludeAccountIDs}-${random_string.resource_code.result}"
+      Name        = "${var.ExcludeAccountIDs}"
     }
 }
 
@@ -231,7 +231,7 @@ resource "aws_s3_bucket_object" "AHA-S3Object-SecondaryRegion" {
     bucket     = aws_s3_bucket.AHA-S3Bucket-SecondaryRegion[0].bucket
     source     = var.ExcludeAccountIDs
     tags = {
-      Name        = "${var.ExcludeAccountIDs}-${random_string.resource_code.result}"
+      Name        = "${var.ExcludeAccountIDs}"
     }
 }
 
@@ -246,7 +246,7 @@ resource "aws_dynamodb_table" "AHA-DynamoDBTable" {
     write_capacity = 5
     stream_enabled = false
     tags           = {
-       Name   = "${var.dynamodbtable}-${random_string.resource_code.result}"
+       Name   = "${var.dynamodbtable}"
     }
 
     attribute {
@@ -275,7 +275,7 @@ resource "aws_dynamodb_table" "AHA-GlobalDynamoDBTable" {
     stream_enabled   = true
     stream_view_type = "NEW_AND_OLD_IMAGES"
     tags           = {
-       Name   = "${var.dynamodbtable}-${random_string.resource_code.result}"
+       Name   = "${var.dynamodbtable}"
     }
 
     attribute {
@@ -304,7 +304,7 @@ resource "aws_dynamodb_tag" "AHA-GlobalDynamoDBTable" {
     provider   = aws.secondary_region
     resource_arn = replace(aws_dynamodb_table.AHA-GlobalDynamoDBTable[count.index].arn, var.aha_primary_region, var.aha_secondary_region)
     key          = "Name"
-    value        = "${var.dynamodbtable}-${random_string.resource_code.result}"
+    value        = "${var.dynamodbtable}"
 }
 
 # Secrets - SlackChannelSecret
@@ -314,7 +314,6 @@ resource "aws_secretsmanager_secret" "SlackChannelID" {
     description      = "Slack Channel ID Secret"
     tags             = {
         "HealthCheckSlack" = "ChannelID"
-        "Name"             = "AHA-SlackChannelID-${random_string.resource_code.result}"
     }
     dynamic "replica" {
       for_each = var.aha_secondary_region == "" ? [] : [1]
@@ -336,7 +335,7 @@ resource "aws_secretsmanager_secret" "MicrosoftChannelID" {
     description      = "Microsoft Channel ID Secret"
     tags             = {
         "HealthCheckMicrosoft" = "ChannelID"
-        "Name"                 = "AHA-MicrosoftChannelID-${random_string.resource_code.result}"
+        "Name"                 = "AHA-MicrosoftChannelID"
     }
     dynamic "replica" {
       for_each = var.aha_secondary_region == "" ? [] : [1]
@@ -358,7 +357,7 @@ resource "aws_secretsmanager_secret" "EventBusName" {
     description      = "EventBus Name Secret"
     tags             = {
         "EventBusName" = "ChannelID"
-        "Name"         = "AHA-EventBusName-${random_string.resource_code.result}"
+        "Name"         = "AHA-EventBusName"
     }
     dynamic "replica" {
       for_each = var.aha_secondary_region == "" ? [] : [1]
@@ -403,7 +402,7 @@ resource "aws_secretsmanager_secret" "AssumeRoleArn" {
     description      = "Management account role for AHA to assume"
     tags             = {
         "AssumeRoleArn" = ""
-        "Name"          = "AHA-AssumeRoleArn-${random_string.resource_code.result}"
+        "Name"          = "AHA-AssumeRoleArn"
     }
     dynamic "replica" {
       for_each = var.aha_secondary_region == "" ? [0] : [1]
@@ -441,7 +440,7 @@ resource "aws_iam_role" "AHA-LambdaExecutionRole" {
         policy = data.aws_iam_policy_document.AHA-LambdaPolicy-Document.json
     }
     tags             = {
-        "Name"             = "AHA-LambdaExecutionRole-${random_string.resource_code.result}"
+        "Name"             = "AHA-LambdaExecutionRole"
     }
 }
 
@@ -671,7 +670,7 @@ resource "aws_lambda_function" "AHA-LambdaFunction-PrimaryRegion" {
         mode = "PassThrough"
     }
     tags             = {   
-        "Name"             = "AHA-LambdaFunction-${random_string.resource_code.result}"
+        "Name"             = "AHA-LambdaFunction"
     }
     depends_on = [
       aws_dynamodb_table.AHA-DynamoDBTable,
@@ -718,7 +717,7 @@ resource "aws_lambda_function" "AHA-LambdaFunction-SecondaryRegion" {
         mode = "PassThrough"
     }
     tags             = {
-        "Name"             = "AHA-LambdaFunction-${random_string.resource_code.result}"
+        "Name"             = "AHA-LambdaFunction"
     }
     depends_on = [
       aws_dynamodb_table.AHA-DynamoDBTable,
@@ -734,7 +733,7 @@ resource "aws_cloudwatch_event_rule" "AHA-LambdaSchedule-PrimaryRegion" {
     name                = "AHA-LambdaSchedule-${random_string.resource_code.result}"
     schedule_expression = "rate(1 minute)"
     tags             = {
-        "Name"             = "AHA-LambdaSchedule-${random_string.resource_code.result}"
+        "Name"             = "AHA-LambdaSchedule"
     }
 }
 resource "aws_cloudwatch_event_rule" "AHA-LambdaSchedule-SecondaryRegion" {
@@ -746,7 +745,7 @@ resource "aws_cloudwatch_event_rule" "AHA-LambdaSchedule-SecondaryRegion" {
     name                = "AHA-LambdaSchedule-${random_string.resource_code.result}"
     schedule_expression = "rate(1 minute)"
     tags             = {
-        "Name"             = "AHA-LambdaSchedule-${random_string.resource_code.result}"
+        "Name"             = "AHA-LambdaSchedule"
     }
 }
 
