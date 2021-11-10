@@ -1,4 +1,4 @@
-# Input variables for 02_Terraform_deploy.AHA.tf (AHA Solution deploy using terraform)
+# Input variables for Terraform_DEPLOY_AHA.tf (AHA Solution deploy using terraform)
 #
 # Customize Alerts/Notifications
 aha_primary_region="us-east-1"
@@ -24,6 +24,13 @@ EventSearchBack="1"
 Regions="all regions"
 ManagementAccountRoleArn=""
 ExcludeAccountIDs=""
+
+# Tags applied to all resources - using module provider. Update them per your requirement.
+default_tags = {
+  Application     = "AHA-Solution"
+  Environment     = "PROD"
+  auto-delete     = "no"
+}
 
 # commands to apply changes
 # terraform init

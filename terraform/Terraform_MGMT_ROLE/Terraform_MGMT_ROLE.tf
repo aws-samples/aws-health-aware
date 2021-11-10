@@ -2,6 +2,24 @@
 
 # Parameters
 provider "aws" {
+    region  = var.aha_primary_region
+    default_tags {
+      tags = "${var.default_tags}"
+    }
+}
+
+variable "aha_primary_region" {
+    description = "Primary region where AHA solution will be deployed"
+    type        = string
+    default     = "us-east-1"
+}
+
+variable "default_tags" {
+    description = "Tags used for the AWS resources created by this template"
+    type        = map
+    default     = {
+      Application      = "AHA-Solution"
+    }
 }
 
 variable "OrgMemberAccountId" {
@@ -12,6 +30,13 @@ variable "OrgMemberAccountId" {
     condition     = length(var.OrgMemberAccountId) == 12
     error_message = "The OrgMemberAccountId must be a valid AWS Account ID."
   }
+}
+
+# Random id generator
+resource "random_string" "resource_code" {
+  length  = 8
+  special = false
+  upper   = false
 }
 
 # aws_iam_role.AWSHealthAwareRoleForPHDEvents:
@@ -30,7 +55,7 @@ resource "aws_iam_role" "AWSHealthAwareRoleForPHDEvents" {
             Version   = "2012-10-17"
         }
     )
-    name                  = "AWSHealthAwareRoleForPHDEvents"
+    name                  = "AWSHealthAwareRoleForPHDEvents-${random_string.resource_code.result}"
     description           = "Grants access to PHD event"
     path                  = "/"
 
