@@ -306,6 +306,14 @@ resource "aws_dynamodb_tag" "AHA-GlobalDynamoDBTable" {
     key          = "Name"
     value        = "${var.dynamodbtable}"
 }
+# Tags for DynamoDB - secondary region - default_tags
+resource "aws_dynamodb_tag" "AHA-GlobalDynamoDBTable-Additional-tags" {
+    for_each = { for key, value in var.default_tags : key => value if var.aha_secondary_region != "" }
+    provider   = aws.secondary_region
+    resource_arn = replace(aws_dynamodb_table.AHA-GlobalDynamoDBTable[0].arn, var.aha_primary_region, var.aha_secondary_region)
+    key          = each.key
+    value        = each.value
+}
 
 # Secrets - SlackChannelSecret
 resource "aws_secretsmanager_secret" "SlackChannelID" {
