@@ -407,13 +407,14 @@ Resources:
                   Runtime: python3.8
                   Environment:
                     Variables:
-                      REGIONS: ${Regions}
+                      ACCOUNT_IDS: "${AccountIDs}"
+                      REGIONS: "${Regions}"
                       FROM_EMAIL: "${FromEmail}"
                       TO_EMAIL: "${ToEmail}"
                       EMAIL_SUBJECT: "${Subject}"
                       DYNAMODB_TABLE: "${GlobalDDBTable}"
-                      EVENT_SEARCH_BACK: ${EventSearchBack}
-                      ORG_STATUS: ${AWSOrganizationsEnabled}
+                      EVENT_SEARCH_BACK: "${EventSearchBack}"
+                      ORG_STATUS: "${AWSOrganizationsEnabled}"
                       HEALTH_EVENT_TYPE: "${AWSHealthEventType}"
                       MANAGEMENT_ROLE_ARN: "${ManagementAccountRoleArn}"
   LambdaExecutionRole:
@@ -523,7 +524,7 @@ Resources:
                   - dynamodb:UpdateItem
                   - dynamodb:UpdateTable
                   - dynamodb:GetRecords
-                Resource: !If [UsingMultiRegion, !GetAtt GlobalDDBTable.Arn, !GetAtt DynamoDBTable.Arn]
+                Resource: !If [UsingMultiRegion, [!GetAtt GlobalDDBTable.Arn, !Sub 'arn:aws:dynamodb:${SecondaryRegion}:${AWS::AccountId}:table/${GlobalDDBTable}'], !GetAtt DynamoDBTable.Arn]
               - Effect: Allow
                 Action:
                   - events:PutEvents
