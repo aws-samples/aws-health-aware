@@ -413,7 +413,7 @@ resource "aws_secretsmanager_secret" "AssumeRoleArn" {
         "Name"          = "AHA-AssumeRoleArn"
     }
     dynamic "replica" {
-      for_each = var.aha_secondary_region == "" ? [0] : [1]
+      for_each = var.aha_secondary_region == "" ? [] : [1]
       content {
         region = var.aha_secondary_region
       }
