@@ -258,7 +258,7 @@ The 3 deployment methods for AHA are:
 
 There are 3 available ways to deploy AHA, all are done via the same Terraform template to make deployment as easy as possible.
 
-**NOTE: ** AHA code is tested with Terraform version v1.0.9, please make sure to have minimum terraform verson of v1.0.9 installed.
+**NOTE:** AHA code is tested with Terraform version v1.0.9, please make sure to have minimum terraform verson of v1.0.9 installed.
 
 The 3 deployment methods for AHA are:
 
@@ -273,7 +273,7 @@ The 3 deployment methods for AHA are:
 1. Have at least 1 [endpoint](#configuring-an-endpoint) configured (you can have multiple)
 2. Have access to deploy Terraform Templates with the following resources: AWS IAM policies, Amazon DynamoDB Tables, AWS Lambda, Amazon EventBridge and AWS Secrets Manager.
 
-**NOTE: ** For Multi region deployment, DynamoDB table will be created with PAY_PER_REQUEST billing mode insted of PROVISIONED due to limitation with terraform.
+**NOTE:** For Multi region deployment, DynamoDB table will be created with PAY_PER_REQUEST billing mode insted of PROVISIONED due to limitation with terraform.
 
 ### Deployment - Terraform
 
@@ -287,8 +287,15 @@ $ cd aws-health-aware/terraform/Terraform_DEPLOY_AHA
  - *aha_secondary_region* - Required if needed to deploy in AHA solution in multiple regions, change to another region (Secondary) where you want to deploy AHA solution, Otherwise leave to default empty value.
  - *AWSOrganizationsEnabled* - Leave it to default which is `No`. If you do have AWS Organizations enabled and you want to aggregate across all your accounts, you should be following the steps for [AHA for users who ARE using AWS Organizations (Management Account)](#aha-with-aws-organizations-on-management-account-using-terraform)] or [AHA for users WITH AWS Organizations (Member Account)](#aha-with-aws-organizations-on-member-account-using-terraform)
  - *AWSHealthEventType* - select whether you want to receive *all* event types or *only* issues.
- - *Communications Channels* section - enter the URLs, Emails and/or ARN of the endpoints you configured previously.
- - *Email Setup* section - enter the From and To Email addresses as well as the Email subject. If you aren't configuring email, just leave it as is.
+ - Communications Channels section - enter the URLs, Emails and/or ARN of the [endpoints](https://github.com/aws-samples/aws-health-aware#configuring-an-endpoint) you configured previously.
+   - *EventBusName*
+   - *SlackWebhookURL*
+   - *MicrosoftTeamsWebhookURL*
+   - *AmazonChimeWebhookURL*
+ - Email Setup section - enter the from and to addresses as well as the email subject. If you aren't configuring email, just leave it as is.
+   - *FromEmail*
+   - *ToEmail*
+   - *Subject*
  - *EventSearchBack* - enter in the amount of hours you want to search back for events. Default is 1 hour.
  - *Regions* - enter in the regions you want to search for events in. Default is all regions. You can filter for up to 10, comma separated (e.g. us-east-1, us-east-2).
  - *ManagementAccountRoleArn* - Leave it default empty value
@@ -306,7 +313,7 @@ $ terraform apply
 1. [Enable Health Organizational View](https://docs.aws.amazon.com/health/latest/ug/enable-organizational-view-in-health-console.html) from the console, so that you can aggregate all Personal Health Dashboard (PHD) events for all accounts in your AWS Organization. 
 2. Have at least 1 [endpoint](#configuring-an-endpoint) configured (you can have multiple)
 
-**NOTE: ** For Multi region deployment, DynamoDB table will be created with PAY_PER_REQUEST billing mode insted of PROVISIONED due to limitation with terraform.
+**NOTE:** For Multi region deployment, DynamoDB table will be created with PAY_PER_REQUEST billing mode insted of PROVISIONED due to limitation with terraform.
 
 ### Deployment - Terraform
 
@@ -315,13 +322,20 @@ $ terraform apply
 $ git clone https://github.com/aws-samples/aws-health-aware.git
 $ cd aws-health-aware/terraform/Terraform_DEPLOY_AHA
 ```
-5. Update parameters file **terraform.tfvars** as below
+2. Update parameters file **terraform.tfvars** as below
  - *aha_primary_region* - change to region where you want to deploy AHA solution
  - *aha_secondary_region* - Required if needed to deploy in AHA solution in multiple regions, change to another region (Secondary) where you want to deploy AHA solution, Otherwise leave to default empty value.
  - *AWSOrganizationsEnabled* - change the value to `Yes`. If you do NOT have AWS Organizations enabled you should be following the steps for [AHA for users who are NOT using AWS Organizations](#aha-without-aws-organizations-using-terraform)
  - *AWSHealthEventType* - select whether you want to receive *all* event types or *only* issues.
- - *Communications Channels* section - enter the URLs, Emails and/or ARN of the endpoints you configured previously.
- - *Email Setup* section - enter the From and To Email addresses as well as the Email subject. If you aren't configuring email, just leave it as is.
+ - Communications Channels section - enter the URLs, Emails and/or ARN of the [endpoints](https://github.com/aws-samples/aws-health-aware#configuring-an-endpoint) you configured previously.
+   - *EventBusName*
+   - *SlackWebhookURL*
+   - *MicrosoftTeamsWebhookURL*
+   - *AmazonChimeWebhookURL*
+ - Email Setup section - enter the from and to addresses as well as the email subject. If you aren't configuring email, just leave it as is.
+   - *FromEmail*
+   - *ToEmail*
+   - *Subject*
  - *EventSearchBack* - enter in the amount of hours you want to search back for events. Default is 1 hour.
  - *Regions* enter in the regions you want to search for events in. Default is all regions. You can filter for up to 10, comma separated (e.g. us-east-1, us-east-2).
  - *ManagementAccountRoleArn* - Leave it default empty value
@@ -340,7 +354,7 @@ $ terraform apply
 1. [Enable Health Organizational View](https://docs.aws.amazon.com/health/latest/ug/enable-organizational-view-in-health-console.html) from the console, so that you can aggregate all Personal Health Dashboard (PHD) events for all accounts in your AWS Organization.
 2. Have at least 1 [endpoint](#configuring-an-endpoint) configured (you can have multiple)
 
-**NOTE: ** For Multi region deployment, DynamoDB table will be created with PAY_PER_REQUEST billing mode insted of PROVISIONED due to limitation with terraform.
+**NOTE:** For Multi region deployment, DynamoDB table will be created with PAY_PER_REQUEST billing mode insted of PROVISIONED due to limitation with terraform.
 
 ### Deployment - Terraform
 
@@ -358,20 +372,27 @@ $ terraform apply
 ```
 3. Wait for deployment to complete. This will create an IAM role with the necessary AWS Organizations and AWS Health API permissions for the member account to assume. and note the **AWSHealthAwareRoleForPHDEventsArn** role name, this will be used during deploying solution in member account
 4. In the *Outputs* section, there will be a value for *AWSHealthAwareRoleForPHDEventsArn* (e.g. arn:aws:iam::000123456789:role/aha-org-role-AWSHealthAwareRoleForPHDEvents-ABCSDE12201), copy that down as you will need to update params file (variable ManagementAccountRoleArn).
-4. Change directory to **terraform/Terraform_DEPLOY_AHA** to deploy the solution
-5. Update parameters file **terraform.tfvars** as below
+5. Change directory to **terraform/Terraform_DEPLOY_AHA** to deploy the solution
+6. Update parameters file **terraform.tfvars** as below
  - *aha_primary_region* - change to region where you want to deploy AHA solution
  - *aha_secondary_region* - Required if needed to deploy in AHA solution in multiple regions, change to another region (Secondary) where you want to deploy AHA solution, Otherwise leave to default empty value.
  - *AWSOrganizationsEnabled* - change the value to `Yes`. If you do NOT have AWS Organizations enabled you should be following the steps for [AHA for users who are NOT using AWS Organizations](#aha-without-aws-organizations-using-terraform)
  - *AWSHealthEventType* - select whether you want to receive *all* event types or *only* issues.
- - *Communications Channels* section - enter the URLs, Emails and/or ARN of the endpoints you configured previously.
- - *Email Setup* section - enter the From and To Email addresses as well as the Email subject. If you aren't configuring email, just leave it as is.
+ - Communications Channels section - enter the URLs, Emails and/or ARN of the [endpoints](https://github.com/aws-samples/aws-health-aware#configuring-an-endpoint) you configured previously.
+   - *EventBusName*
+   - *SlackWebhookURL*
+   - *MicrosoftTeamsWebhookURL*
+   - *AmazonChimeWebhookURL*
+ - Email Setup section - enter the from and to addresses as well as the email subject. If you aren't configuring email, just leave it as is.
+   - *FromEmail*
+   - *ToEmail*
+   - *Subject*
  - *EventSearchBack* - enter in the amount of hours you want to search back for events. Default is 1 hour.
  - *Regions* enter in the regions you want to search for events in. Default is all regions. You can filter for up to 10, comma separated (e.g. us-east-1, us-east-2).
  - *ManagementAccountRoleArn* -  Enter in the full IAM arn from step 10 (e.g. arn:aws:iam::000123456789:role/aha-org-role-AWSHealthAwareRoleForPHDEvents-ABCSDE12201)
  - *S3Bucket* - type ***just*** the name of the S3 bucket where exclude file .csv you upload. leave it empty if exclude Account feature is not used. 
  - *ExcludeAccountIDs* - type ***just*** the name of the .csv file you want to upload if needed to exclude accounts from monitoring, else leave it to empty.
-4. Deploy the solution using terraform commands below.
+7. Deploy the solution using terraform commands below.
 ```
 $ terraform init
 $ terraform plan
@@ -410,12 +431,12 @@ $ terraform apply
 We are happy to announce the launch of new enhancements to AHA. Please try them out and keep sendings us your feedback!
 1. Multi-region deployment option
 2. Updated file names for improved clarity
-2. Ability to filter accounts (Refer to AccountIDs CFN parameter for more info on how to exclude accounts from AHA notifications)
-3. Ability to view Account Names for a given Account ID in the PHD alerts
-4. If you are running AHA with the Non-Org mode, AHA will send the Account #' and resource(s) impacts if applicable for a given alert
-5. Ability to deploy AHA with the Org mode on a member account
-6. Support for a new Health Event Type - "Investigation"
-7. Terraform support to deploy the solution
+3. Ability to filter accounts (Refer to AccountIDs CFN parameter for more info on how to exclude accounts from AHA notifications)
+4. Ability to view Account Names for a given Account ID in the PHD alerts
+5. If you are running AHA with the Non-Org mode, AHA will send the Account #' and resource(s) impacts if applicable for a given alert
+6. Ability to deploy AHA with the Org mode on a member account
+7. Support for a new Health Event Type - "Investigation"
+8. Terraform support to deploy the solution
 
 # Troubleshooting
 * If for whatever reason you need to update the Webhook URL; just update the CloudFormation or terraform Template with the new Webhook URL.
