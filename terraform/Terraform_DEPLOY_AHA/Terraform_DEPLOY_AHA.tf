@@ -198,20 +198,29 @@ resource "random_string" "resource_code" {
 resource "aws_s3_bucket" "AHA-S3Bucket-PrimaryRegion" {
     count      = "${var.ExcludeAccountIDs != "" ? 1 : 0}"
     bucket     = "aha-bucket-${var.aha_primary_region}-${random_string.resource_code.result}"
-    acl        = "private"
     tags = {
       Name        = "aha-bucket"
     }
 }
 
+resource "aws_s3_bucket_acl" "AHA-S3Bucket-PrimaryRegion" {
+  count      = "${var.ExcludeAccountIDs != "" ? 1 : 0}"
+  bucket = aws_s3_bucket.AHA-S3Bucket-PrimaryRegion[count.index].id
+  acl    = "private"
+}
 resource "aws_s3_bucket" "AHA-S3Bucket-SecondaryRegion" {
     count      = "${var.aha_secondary_region != "" && var.ExcludeAccountIDs != "" ? 1 : 0}"
     provider   = aws.secondary_region
     bucket     = "aha-bucket-${var.aha_secondary_region}-${random_string.resource_code.result}"
-    acl        = "private"
     tags = {
       Name        = "aha-bucket"
     }
+}
+
+resource "aws_s3_bucket_acl" "AHA-S3Bucket-SecondaryRegion" {
+  count      = "${var.aha_secondary_region != "" && var.ExcludeAccountIDs != "" ? 1 : 0}"
+  bucket = aws_s3_bucket.AHA-S3Bucket-SecondaryRegion[count.index].id
+  acl    = "private"
 }
 
 resource "aws_s3_bucket_object" "AHA-S3Object-PrimaryRegion" {
@@ -782,4 +791,3 @@ resource "aws_lambda_permission" "AHA-LambdaSchedulePermission-SecondaryRegion" 
     function_name = aws_lambda_function.AHA-LambdaFunction-SecondaryRegion[0].arn
     source_arn    = aws_cloudwatch_event_rule.AHA-LambdaSchedule-SecondaryRegion[0].arn
 }
-
