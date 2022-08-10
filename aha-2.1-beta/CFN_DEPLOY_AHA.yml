@@ -413,7 +413,7 @@ Resources:
                       EMAIL_SUBJECT: "${Subject}"
                       DYNAMODB_TABLE: "${GlobalDDBTable}"
                       EVENT_SEARCH_BACK: ${EventSearchBack}
-                      ORG_STATUS: ${AWSOrganizationsEnabled}
+                      ORG_STATUS: "${AWSOrganizationsEnabled}"
                       HEALTH_EVENT_TYPE: "${AWSHealthEventType}"
                       MANAGEMENT_ROLE_ARN: "${ManagementAccountRoleArn}"
   LambdaExecutionRole:
