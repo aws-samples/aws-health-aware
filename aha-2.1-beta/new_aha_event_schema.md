@@ -162,7 +162,7 @@ To match events based on an AWS account name or number, use the following patter
 **Example 6:**
 
 ```
- **** { 
+{ 
   "detail": {
     "affectedEntities": {
       "awsAccountName": ["Prod-Apps"]
