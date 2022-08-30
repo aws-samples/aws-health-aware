@@ -198,23 +198,33 @@ resource "random_string" "resource_code" {
 resource "aws_s3_bucket" "AHA-S3Bucket-PrimaryRegion" {
     count      = "${var.ExcludeAccountIDs != "" ? 1 : 0}"
     bucket     = "aha-bucket-${var.aha_primary_region}-${random_string.resource_code.result}"
-    acl        = "private"
     tags = {
       Name        = "aha-bucket"
     }
+}
+
+resource "aws_s3_bucket_acl" "AHA-S3Bucket-PrimaryRegion" {
+    bucket = aws_s3_bucket.AHA-S3Bucket-PrimaryRegion[0].id
+    acl    = "private"
 }
 
 resource "aws_s3_bucket" "AHA-S3Bucket-SecondaryRegion" {
     count      = "${var.aha_secondary_region != "" && var.ExcludeAccountIDs != "" ? 1 : 0}"
     provider   = aws.secondary_region
     bucket     = "aha-bucket-${var.aha_secondary_region}-${random_string.resource_code.result}"
-    acl        = "private"
     tags = {
       Name        = "aha-bucket"
     }
 }
 
-resource "aws_s3_bucket_object" "AHA-S3Object-PrimaryRegion" {
+resource "aws_s3_bucket_acl" "AHA-S3Bucket-SecondaryRegion" {
+    count  = "${var.aha_secondary_region != "" && var.ExcludeAccountIDs != "" ? 1 : 0}"
+    provider   = aws.secondary_region
+    bucket = aws_s3_bucket.AHA-S3Bucket-SecondaryRegion[0].id
+    acl    = "private"
+}
+
+resource "aws_s3_object" "AHA-S3Object-PrimaryRegion" {
     count      = "${var.ExcludeAccountIDs != "" ? 1 : 0}"
     key        = var.ExcludeAccountIDs
     bucket     = aws_s3_bucket.AHA-S3Bucket-PrimaryRegion[0].bucket
@@ -224,7 +234,7 @@ resource "aws_s3_bucket_object" "AHA-S3Object-PrimaryRegion" {
     }
 }
 
-resource "aws_s3_bucket_object" "AHA-S3Object-SecondaryRegion" {
+resource "aws_s3_object" "AHA-S3Object-SecondaryRegion" {
     count      = "${var.aha_secondary_region != "" && var.ExcludeAccountIDs != "" ? 1 : 0}"
     provider   = aws.secondary_region
     key        = var.ExcludeAccountIDs
@@ -234,7 +244,6 @@ resource "aws_s3_bucket_object" "AHA-S3Object-SecondaryRegion" {
       Name        = "${var.ExcludeAccountIDs}"
     }
 }
-
 
 # DynamoDB table - Create if secondary region not set
 resource "aws_dynamodb_table" "AHA-DynamoDBTable" {
@@ -320,6 +329,7 @@ resource "aws_secretsmanager_secret" "SlackChannelID" {
     count = "${var.SlackWebhookURL == "" ? 0 : 1}"
     name             = "SlackChannelID"
     description      = "Slack Channel ID Secret"
+    recovery_window_in_days      = 0
     tags             = {
         "HealthCheckSlack" = "ChannelID"
     }
@@ -341,6 +351,7 @@ resource "aws_secretsmanager_secret" "MicrosoftChannelID" {
     count = "${var.MicrosoftTeamsWebhookURL == "" ? 0 : 1}"
     name             = "MicrosoftChannelID"
     description      = "Microsoft Channel ID Secret"
+    recovery_window_in_days      = 0
     tags             = {
         "HealthCheckMicrosoft" = "ChannelID"
         "Name"                 = "AHA-MicrosoftChannelID"
@@ -363,6 +374,7 @@ resource "aws_secretsmanager_secret" "EventBusName" {
     count = "${var.EventBusName == "" ? 0 : 1}"
     name             = "EventBusName"
     description      = "EventBus Name Secret"
+    recovery_window_in_days      = 0
     tags             = {
         "EventBusName" = "ChannelID"
         "Name"         = "AHA-EventBusName"
@@ -386,6 +398,7 @@ resource "aws_secretsmanager_secret" "ChimeChannelID" {
     count = "${var.AmazonChimeWebhookURL == "" ? 0 : 1}"
     name             = "ChimeChannelID"
     description      = "Chime Channel ID Secret"
+    recovery_window_in_days      = 0
     tags             = {
         "HealthCheckChime" = "ChannelID"
         "Name"             = "AHA-ChimeChannelID-${random_string.resource_code.result}"
@@ -408,6 +421,7 @@ resource "aws_secretsmanager_secret" "AssumeRoleArn" {
     count = "${var.ManagementAccountRoleArn == "" ? 0 : 1}"
     name             = "AssumeRoleArn"
     description      = "Management account role for AHA to assume"
+    recovery_window_in_days      = 0
     tags             = {
         "AssumeRoleArn" = ""
         "Name"          = "AHA-AssumeRoleArn"
