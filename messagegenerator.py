@@ -14,33 +14,18 @@ def get_message_for_feishu(event_details, event_type, affected_accounts, affecte
     if len(affected_entities) >= 1:
         affected_entities = "\n".join(affected_entities)
         if affected_entities == "UNKNOWN":
-            affected_entities = "All resources\nin region"
+            affected_entities = "All resources in region"
     else:
-        affected_entities = "All resources\nin region"
+        affected_entities = "All resources in region"
     if len(affected_accounts) >= 1:
         affected_accounts = "\n".join(affected_accounts)
     else:
-        affected_accounts = "All accounts\nin region"      
+        affected_accounts = "All accounts in region"      
     if event_type == "create":
         summary += (
             f"[NEW] AWS Health reported an issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
             f"the {event_details['successfulSet'][0]['event']['region'].upper()} region."
         )
-        # message1 = {
-        #     "zh_cn": {
-        #         "title": summary,
-        #         "content": [
-        #             [{"tag":"text","text": "Account(s): {}".format(affected_accounts)}],
-        #             [{"tag":"text","text": "Resource(s): {}".format(affected_entities)}],
-        #             [{"tag":"text","text": "Service: {}".format(event_details['successfulSet'][0]['event']['service'])}],
-        #             [{"tag":"text","text": "Region: {}".format(event_details['successfulSet'][0]['event']['region'])}],
-        #             [{"tag":"text","text": "Start Time (UTC): {}".format(cleanup_time(event_details['successfulSet'][0]['event']['startTime']))}],
-        #             [{"tag":"text","text": "Status: {}".format(event_details['successfulSet'][0]['event']['statusCode'])}],
-        #             [{"tag":"text","text": "Event ARN: {}".format(event_details['successfulSet'][0]['event']['arn'])}],
-        #             [{"tag":"text","text": "Updates: {}".format(get_last_aws_update(event_details))}],
-        #         ]
-        #     }
-        # }
         message = f"""
         {{
             "config": {{
@@ -180,6 +165,13 @@ def get_message_for_feishu(event_details, event_type, affected_accounts, affecte
                     {{
                     "is_short": false,
                     "text": {{
+                        "content": "**End Time (UTC): **{cleanup_time(event_details['successfulSet'][0]['event']['endTime'])}",
+                        "tag": "lark_md"
+                    }}
+                    }},
+                    {{
+                    "is_short": false,
+                    "text": {{
                         "content": "**Resource(s): **{affected_entities}",
                         "tag": "lark_md"
                     }}
@@ -219,14 +211,14 @@ def get_org_message_for_feishu(event_details, event_type, affected_org_accounts,
     if len(affected_org_entities) >= 1:
         affected_org_entities = "\n".join(affected_org_entities)
     else:
-        affected_org_entities = "All resources\nin region"
+        affected_org_entities = "All resources in region"
     if len(affected_org_accounts) >= 1:
         affected_org_accounts = "\n".join(affected_org_accounts)
     else:
-        affected_org_accounts = "All accounts\nin region"        
+        affected_org_accounts = "All accounts in region"
     if event_type == "create":
         summary += (
-            f":rotating_light:*[NEW] AWS Health reported an issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
+            f"[NEW] AWS Health reported an issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
             f"the {event_details['successfulSet'][0]['event']['region'].upper()} region.*"
         )
         message = f"""
@@ -311,7 +303,7 @@ def get_org_message_for_feishu(event_details, event_type, affected_org_accounts,
 
     elif event_type == "resolve":
         summary += (
-            f":heavy_check_mark:*[RESOLVED] The AWS Health issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
+            f"[RESOLVED] The AWS Health issue with the {event_details['successfulSet'][0]['event']['service'].upper()} service in "
             f"the {event_details['successfulSet'][0]['event']['region'].upper()} region is now resolved.*"
         )
         message = f"""
@@ -361,6 +353,13 @@ def get_org_message_for_feishu(event_details, event_type, affected_org_accounts,
                     "is_short": false,
                     "text": {{
                         "content": "**Start Time (UTC): **{cleanup_time(event_details['successfulSet'][0]['event']['startTime'])}",
+                        "tag": "lark_md"
+                    }}
+                    }},
+                    {{
+                    "is_short": false,
+                    "text": {{
+                        "content": "**End Time (UTC): **{cleanup_time(event_details['successfulSet'][0]['event']['endTime'])}",
                         "tag": "lark_md"
                     }}
                     }},
