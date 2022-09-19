@@ -15,9 +15,10 @@ Metadata:
           - S3Key
       - Label:
           default: >-
-            Communication Channels - Slack/Microsoft Teams/Amazon Chime And/or
+            Communication Channels - Slack/Feishu Bot/Microsoft Teams/Amazon Chime And/or
             EventBridge
         Parameters:
+          - FeishuWebhookURL
           - SlackWebhookURL
           - MicrosoftTeamsWebhookURL
           - AmazonChimeWebhookURL
@@ -49,6 +50,8 @@ Metadata:
         default: Name of .zip file in S3 Bucket
       SlackWebhookURL:
         default: Slack Webhook URL
+      FeishuWebhookURL:
+        default: Feishu Bot Webhook Url
       MicrosoftTeamsWebhookURL:
         default: Microsoft Teams Webhook URL
       AmazonChimeWebhookURL:
@@ -68,11 +71,12 @@ Metadata:
       AccountIDs:
         default: Exclude any account numbers?        
 Conditions:
+  UsingFeishu: !Not [!Equals [!Ref FeishuWebhookURL, None]]
   UsingSlack: !Not [!Equals [!Ref SlackWebhookURL, None]]
   UsingTeams: !Not [!Equals [!Ref MicrosoftTeamsWebhookURL, None]]
   UsingChime: !Not [!Equals [!Ref AmazonChimeWebhookURL, None]]
   UsingEventBridge: !Not [!Equals [!Ref EventBusName, None]]
-  UsingSecrets: !Or [!Condition UsingSlack, !Condition UsingTeams, !Condition UsingChime, !Condition UsingEventBridge, !Condition UsingCrossAccountRole]
+  UsingSecrets: !Or [!Condition UsingSlack, !Condition UsingFeishu, !Condition UsingTeams, !Condition UsingChime, !Condition UsingEventBridge, !Condition UsingCrossAccountRole]
   UsingCrossAccountRole: !Not [!Equals [!Ref ManagementAccountRoleArn, None]]
   NotUsingMultiRegion: !Equals [!Ref SecondaryRegion, 'No']
   UsingMultiRegion: !Not [!Equals [!Ref SecondaryRegion, 'No']]
@@ -148,6 +152,11 @@ Parameters:
       you wish to send the alerts to the AWS EventBridge. Note: By ingesting
       these alerts to AWS EventBridge, you can integrate with 35 SaaS vendors
       such as DataDog/NewRelic/PagerDuty. If you don't prefer to use EventBridge, leave the default (None).
+    Type: String
+    Default: None
+  FeishuWebhookURL:
+    Description: >-
+      Enter the Feishu Bot Webhook URL. If you don't prefer to use Feishu, leave the default (None).
     Type: String
     Default: None
   SlackWebhookURL:
@@ -451,6 +460,7 @@ Resources:
                    - 'secretsmanager:ListSecretVersionIds'
                    - 'secretsmanager:GetSecretValue'
                   Resource: 
+                   - !If [UsingFeishu, !Sub '${FeishuChannelSecret}', !Ref AWS::NoValue]
                    - !If [UsingTeams, !Sub '${MicrosoftChannelSecret}', !Ref AWS::NoValue]
                    - !If [UsingSlack, !Sub '${SlackChannelSecret}', !Ref AWS::NoValue]
                    - !If [UsingEventBridge, !Sub '${EventBusNameSecret}', !Ref AWS::NoValue]
@@ -576,6 +586,22 @@ Resources:
       Tags:
         - Key: HealthCheckMicrosoft
           Value: ChannelID
+  FeishuChannelSecret:
+    Type: 'AWS::SecretsManager::Secret'
+    Condition: UsingFeishu   
+    Properties:
+      Name: FeishuChannelID
+      Description: Feishu Channel ID Secret
+      ReplicaRegions:
+        !If 
+        - UsingMultiRegion
+        - [{ Region: !Sub '${SecondaryRegion}' }]
+        - !Ref "AWS::NoValue"
+      SecretString:
+        Ref: FeishuWebhookURL
+      Tags:
+        - Key: HealthCheckFeishu
+          Value: ChannelID
   SlackChannelSecret:
     Type: 'AWS::SecretsManager::Secret'
     Condition: UsingSlack   
@@ -624,6 +650,7 @@ Resources:
       Tags:
         - Key: HealthCheckChime
           Value: ChannelID
+          
   AssumeRoleSecret:
     Type: 'AWS::SecretsManager::Secret'
     Condition: UsingCrossAccountRole    
