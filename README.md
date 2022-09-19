@@ -7,6 +7,7 @@
 - [Introduction](#introduction)
 - [Architecture](#architecture)
 - [Configuring an Endpoint](#configuring-an-endpoint)
+  * [Creating a Feishu Bot Webhook URL](#creating-a-feishu-bot-webhook-url)
   * [Creating a Amazon Chime Webhook URL](#creating-a-amazon-chime-webhook-url)
   * [Creating a Slack Webhook URL](#creating-a-slack-webhook-url)
   * [Creating a Microsoft Teams Webhook URL](#creating-a-microsoft-teams-webhook-url)
@@ -53,6 +54,12 @@ AWS Health Aware (AHA) is an automated notification tool for sending well-format
 
 # Configuring an Endpoint
 AHA can send to multiple endpoints (webhook URLs, Email or EventBridge). To use any of these you'll need to set it up before-hand as some of these are done on 3rd party websites. We'll go over some of the common ones here.
+
+## Creating a Feishu Bot Webhook URL
+** maybe you need to add a bot in your chat room**
+
+Please refer to the official document of Feishu to add. Do not support custom keywords/IP list/signature.
+Copy the Webhook URL to prevent it from being abused.
 
 ## Creating a Amazon Chime Webhook URL
 **You will need to have access to create a Amazon Chime room and manage webhooks.**
