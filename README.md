@@ -58,7 +58,8 @@ AHA can send to multiple endpoints (webhook URLs, Email or EventBridge). To use 
 ## Creating a Feishu Bot Webhook URL
 **maybe you need to add a bot in your chat room**
 
-Please refer to the official document of Feishu to add. Do not support custom keywords/IP list/signature.
+Please refer to the [official document](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/bot-v3/bot-overview) of Feishu to add. Do not support custom keywords/IP list/signature.
+
 Copy the Webhook URL to prevent it from being abused.
 
 ## Creating a Amazon Chime Webhook URL
