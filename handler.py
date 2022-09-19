@@ -16,7 +16,7 @@ from boto3.dynamodb.conditions import Key, Attr
 from messagegenerator import get_message_for_slack, get_org_message_for_slack, get_message_for_chime, \
     get_org_message_for_chime, \
     get_message_for_teams, get_org_message_for_teams, get_message_for_email, get_org_message_for_email, \
-    get_org_message_for_eventbridge, get_message_for_eventbridge
+    get_org_message_for_eventbridge, get_message_for_eventbridge, get_message_for_feishu, get_org_message_for_feishu
 
 # query active health API endpoint
 health_dns = socket.gethostbyname_ex('global.health.amazonaws.com')
@@ -45,6 +45,7 @@ def get_account_name(account_id):
     return account_name
 
 def send_alert(event_details, affected_accounts, affected_entities, event_type):
+    feishu_url = get_secrets()["feishu"]
     slack_url = get_secrets()["slack"]
     teams_url = get_secrets()["teams"]
     chime_url = get_secrets()["chime"]
@@ -108,10 +109,22 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
             print("Server connection failed: ", e.reason)
             pass
 
+    if "open.feishu.cn/open-apis/bot/v2/hook" in feishu_url:
+        try:
+            print("Sending the alert to Feishu Channel")
+            # TODO change chime to feishu
+            send_to_feishu(get_message_for_feishu(event_details, event_type, affected_accounts, affected_entities), feishu_url)
+        except HTTPError as e:
+            print("Got an error while sending message to Feishu: ", e.code, e.reason)
+        except URLError as e:
+            print("Server connection failed: ", e.reason)
+            pass
+
 def send_org_alert(event_details, affected_org_accounts, affected_org_entities, event_type):
     slack_url = get_secrets()["slack"]
     teams_url = get_secrets()["teams"]
     chime_url = get_secrets()["chime"]
+    feishu_url = get_secrets()["feishu"]
     SENDER = os.environ['FROM_EMAIL']
     RECIPIENT = os.environ['TO_EMAIL']
     event_bus_name = get_secrets()["eventbusname"]
@@ -182,6 +195,30 @@ def send_org_alert(event_details, affected_org_accounts, affected_org_entities, 
         except URLError as e:
             print("Server connection failed: ", e.reason)
             pass
+
+    if "open.feishu.cn/open-apis/bot/v2/hook" in feishu_url:
+        try:
+            print("Sending the alert to Feishu Channel")
+            # TODO change chime to feishu
+            send_to_feishu(get_message_for_feishu(event_details, event_type, affected_org_accounts, affected_org_entities), feishu_url)
+        except HTTPError as e:
+            print("Got an error while sending message to Feishu: ", e.code, e.reason)
+        except URLError as e:
+            print("Server connection failed: ", e.reason)
+            pass
+
+
+def send_to_feishu(message, webhookurl):
+    feishu_message = {"msg_type": "interactive", "card": message}
+    req = Request(webhookurl, data=json.dumps(feishu_message).encode("utf-8"),
+                  headers={'content-type': 'application/json'})
+    try:
+        response = urlopen(req)
+        response.read()
+    except HTTPError as e:
+        print("Request failed : ", e.code, e.reason)
+    except URLError as e:
+        print("Server connection failed: ", e.reason, e.reason)
 
 
 def send_to_slack(message, webhookurl):
@@ -517,12 +554,14 @@ def get_secrets():
     secret_teams_name = "MicrosoftChannelID"
     secret_slack_name = "SlackChannelID"
     secret_chime_name = "ChimeChannelID"
+    secret_feishu_name = "FeishuChannelID"
     region_name = os.environ['AWS_REGION']
     get_secret_value_response_assumerole = ""
     get_secret_value_response_eventbus = ""
     get_secret_value_response_chime = ""
     get_secret_value_response_teams = ""
     get_secret_value_response_slack = ""
+    get_secret_value_response_feishu = ""
     event_bus_name = "EventBusName"
     secret_assumerole_name = "AssumeRoleArn" 
 
@@ -565,6 +604,24 @@ def get_secrets():
             slack_channel_id = get_secret_value_response_slack['SecretString']
         else:
             slack_channel_id = "None"
+    # add feishu begin
+    try:
+        get_secret_value_response_feishu = client.get_secret_value(
+            SecretId=secret_feishu_name
+        )
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'AccessDeniedException':
+            print("No AWS Secret configured for Feishu, skipping")
+            feishu_bot_id = "None"
+        else:    
+            print("There was an error with the Feishu secret: ",e.response)
+            feishu_bot_id = "None"
+    finally:
+        if 'SecretString' in get_secret_value_response_feishu:
+            feishu_bot_id = get_secret_value_response_feishu['SecretString']
+        else:
+            feishu_bot_id = "None"
+    # add feishu end
     try:
         get_secret_value_response_chime = client.get_secret_value(
             SecretId=secret_chime_name
@@ -617,6 +674,7 @@ def get_secrets():
             "teams": teams_channel_id,
             "slack": slack_channel_id,
             "chime": chime_channel_id,
+            "feishu": feishu_bot_id,
             "eventbusname": eventbus_channel_id,
             "ahaassumerole": assumerole_channel_id
         }    
@@ -873,3 +931,4 @@ def main(event, context):
 
 if __name__ == "__main__":
     main('', '')
+
