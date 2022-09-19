@@ -56,7 +56,7 @@ AWS Health Aware (AHA) is an automated notification tool for sending well-format
 AHA can send to multiple endpoints (webhook URLs, Email or EventBridge). To use any of these you'll need to set it up before-hand as some of these are done on 3rd party websites. We'll go over some of the common ones here.
 
 ## Creating a Feishu Bot Webhook URL
-** maybe you need to add a bot in your chat room**
+**maybe you need to add a bot in your chat room**
 
 Please refer to the official document of Feishu to add. Do not support custom keywords/IP list/signature.
 Copy the Webhook URL to prevent it from being abused.
