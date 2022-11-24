@@ -2,10 +2,9 @@
 #
 # Customize Alerts/Notifications
 aha_primary_region      = "us-east-1"
-aha_secondary_region    = ""
+aha_secondary_region    = "us-west-1"
 AWSOrganizationsEnabled = "No"
-AWSHealthEventType      = "accountNotification | scheduledChange"
-#AWSHealthEventType="issue | accountNotification | scheduledChange"
+AWSHealthEventType      = "issue | accountNotification | scheduledChange"
 
 # Communication Channels - Slack/Microsoft Teams/Amazon Chime And/or EventBridge
 SlackWebhookURL          = ""
@@ -29,7 +28,8 @@ ExcludeAccountIDs        = ""
 # Tags applied to all resources - using module provider. Update them per your requirement.
 default_tags = {
   Application = "AHA-Solution"
-  Environment = "PROD"
+  SlackContact = "SRE-Corner"
+  Environment = "Sandbox"
   auto-delete = "no"
 }
 

@@ -196,7 +196,7 @@ resource "random_string" "resource_code" {
 
 # S3 buckets creation
 resource "aws_s3_bucket" "AHA-S3Bucket-PrimaryRegion" {
-  count  = var.ExcludeAccountIDs != "" ? 1 : 0
+  count  = 1 #var.ExcludeAccountIDs != "" ? 1 : 0
   bucket = "aha-bucket-${var.aha_primary_region}-${random_string.resource_code.result}"
   tags = {
     Name = "aha-bucket"
