@@ -4,7 +4,8 @@
 aha_primary_region="us-east-1"
 aha_secondary_region=""
 AWSOrganizationsEnabled="No"
-AWSHealthEventType="issue | accountNotification | scheduledChange"
+AWSHealthEventType="accountNotification | scheduledChange"
+#AWSHealthEventType="issue | accountNotification | scheduledChange"
 
 # Communication Channels - Slack/Microsoft Teams/Amazon Chime And/or EventBridge
 SlackWebhookURL=""
