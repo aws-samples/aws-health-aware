@@ -10,3 +10,4 @@ terraform/Terraform_DEPLOY_AHA/terraform.tfstate.backup
 terraform/Terraform_DEPLOY_AHA/.terraform/providers/registry.terraform.io/hashicorp/archive/2.2.0/darwin_arm64/terraform-provider-archive_v2.2.0_x5
 terraform/Terraform_DEPLOY_AHA/.terraform/providers/registry.terraform.io/hashicorp/aws/4.40.0/darwin_arm64/terraform-provider-aws_v4.40.0_x5
 terraform/Terraform_DEPLOY_AHA/.terraform/providers/registry.terraform.io/hashicorp/random/3.4.3/darwin_arm64/terraform-provider-random_v3.4.3_x5
+terraform/Terraform_DEPLOY_AHA/.terraform.tfstate.lock.info
