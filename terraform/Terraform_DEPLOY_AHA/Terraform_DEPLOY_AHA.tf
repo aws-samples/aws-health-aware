@@ -5,6 +5,32 @@
 
 data "aws_caller_identity" "current" {}
 
+# ============ Required by PCSK BEGIN
+# Data sources required to pull account info
+data "aws_partition" "current" {}
+#data "aws_caller_identity" "current" {}
+
+# A var that can be used in account-specific profiles to apply the permissions.
+#  boundary. This is potentially very important as it will allow you to apply
+#  these changes only to accounts onboarded with PCSK without breaking deployments
+#  to accounts that haven't been.
+variable "enable_permissions_boundary" {
+  default = false
+}
+# The above should be coupled with a "enable_permissions_boundary = true" line in 
+#  an account-specific profile. If you don't have per-account profiles but deploy
+#  to multiple accounts, you may not be able to use this variable effectively.
+
+# You can apply these locals to your TF to establish the policy arn
+locals {
+  aws_partition                 = data.aws_partition.current.partition
+  account_id                    = data.aws_caller_identity.current.account_id
+  arn_prefix                    = "arn:${local.aws_partition}"
+  pcsk_iam_permissions_boundary = "${local.arn_prefix}:iam::${local.account_id}:policy/PCSKPermissionsBoundary"
+}
+
+# ============ Required by PCSK END
+
 provider "aws" {
   region = var.aha_primary_region
   default_tags {
@@ -442,6 +468,7 @@ resource "aws_secretsmanager_secret_version" "AssumeRoleArn" {
 # IAM Role for Lambda function execution
 resource "aws_iam_role" "AHA-LambdaExecutionRole" {
   name = "AHA-LambdaExecutionRole-${random_string.resource_code.result}"
+  permissions_boundary = var.enable_permissions_boundary ? local.pcsk_iam_permissions_boundary : null # As per https://salesforce.quip.com/ropwAd9yFGB5
   path = "/"
   assume_role_policy = jsonencode(
     {
