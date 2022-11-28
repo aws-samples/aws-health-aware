@@ -15,7 +15,7 @@ data "aws_partition" "current" {}
 #  these changes only to accounts onboarded with PCSK without breaking deployments
 #  to accounts that haven't been.
 variable "enable_permissions_boundary" {
-  default = false
+  default = true
 }
 # The above should be coupled with a "enable_permissions_boundary = true" line in 
 #  an account-specific profile. If you don't have per-account profiles but deploy
