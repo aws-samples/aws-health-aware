@@ -121,9 +121,9 @@ variable "AWSHealthEventType" {
   description = "Select the event type that you want AHA to report on. Refer to \n https://docs.aws.amazon.com/health/latest/APIReference/API_EventType.html for more information on EventType."
   validation {
     condition = (
-      var.AWSHealthEventType == "issue | accountNotification | scheduledChange" || var.AWSHealthEventType == "issue"
+      var.AWSHealthEventType == "accountNotification | scheduledChange" || var.AWSHealthEventType == "accountNotification"
     )
-    error_message = "AWSHealthEventType variable can only accept issue | accountNotification | scheduledChange or issue as values."
+    error_message = "AWSHealthEventType variable can only accept issue | accountNotification | scheduledChange or accountNotification as values."
   }
 }
 
