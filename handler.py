@@ -643,10 +643,10 @@ def describe_events(health_client):
         ]    
     }
 
-    if health_event_type == "issue":
-        event_type_filter = {'eventTypeCategories': ['issue','investigation']}
-        print("AHA will be monitoring events with event type categories as 'issue' only!")
-        str_filter.update(event_type_filter)
+    # if health_event_type == "issue":
+    #     event_type_filter = {'eventTypeCategories': ['issue','investigation']}
+    #     print("AHA will be monitoring events with event type categories as 'issue' only!")
+    #     str_filter.update(event_type_filter)
 
     if dict_regions != "all regions":
         dict_regions = [region.strip() for region in dict_regions.split(',')]
@@ -704,10 +704,10 @@ def describe_org_events(health_client):
         }
     }
 
-    if health_event_type == "issue":
-        event_type_filter = {'eventTypeCategories': ['issue','investigation']}
-        print("AHA will be monitoring events with event type categories as 'issue' only!")
-        str_filter.update(event_type_filter)
+    # if health_event_type == "issue":
+    #     event_type_filter = {'eventTypeCategories': ['issue','investigation']}
+    #     print("AHA will be monitoring events with event type categories as 'issue' only!")
+    #     str_filter.update(event_type_filter)
 
     if dict_regions != "all regions":
         dict_regions = [region.strip() for region in dict_regions.split(',')]
