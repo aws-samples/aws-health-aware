@@ -4,7 +4,7 @@
 aha_primary_region      = "us-east-1"
 aha_secondary_region    = "us-west-1"
 AWSOrganizationsEnabled = "No"
-AWSHealthEventType      = "issue | accountNotification | scheduledChange"
+AWSHealthEventType      = "accountNotification | scheduledChange"
 
 # Communication Channels - Slack/Microsoft Teams/Amazon Chime And/or EventBridge
 SlackWebhookURL          = ""
@@ -27,10 +27,10 @@ ExcludeAccountIDs        = ""
 
 # Tags applied to all resources - using module provider. Update them per your requirement.
 default_tags = {
-  Application = "AHA-Solution"
+  Application  = "AHA-Solution"
   SlackContact = "SRE-Corner"
-  Environment = "Sandbox"
-  auto-delete = "no"
+  Environment  = "Sandbox"
+  auto-delete  = "no"
 }
 
 # commands to apply changes

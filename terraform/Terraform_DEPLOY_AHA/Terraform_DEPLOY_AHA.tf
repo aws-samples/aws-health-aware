@@ -117,7 +117,7 @@ variable "ManagementAccountRoleArn" {
 
 variable "AWSHealthEventType" {
   type        = string
-  default     = "issue | accountNotification | scheduledChange"
+  default     = "accountNotification | scheduledChange"
   description = "Select the event type that you want AHA to report on. Refer to \n https://docs.aws.amazon.com/health/latest/APIReference/API_EventType.html for more information on EventType."
   validation {
     condition = (
@@ -467,9 +467,9 @@ resource "aws_secretsmanager_secret_version" "AssumeRoleArn" {
 
 # IAM Role for Lambda function execution
 resource "aws_iam_role" "AHA-LambdaExecutionRole" {
-  name = "AHA-LambdaExecutionRole-${random_string.resource_code.result}"
+  name                 = "AHA-LambdaExecutionRole-${random_string.resource_code.result}"
   permissions_boundary = var.enable_permissions_boundary ? local.pcsk_iam_permissions_boundary : null # As per https://salesforce.quip.com/ropwAd9yFGB5
-  path = "/"
+  path                 = "/"
   assume_role_policy = jsonencode(
     {
       Version = "2012-10-17"
