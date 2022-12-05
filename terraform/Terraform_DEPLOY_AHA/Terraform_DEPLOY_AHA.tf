@@ -520,6 +520,8 @@ data "aws_iam_policy_document" "AHA-LambdaPolicy-Document" {
       "health:DescribeAffectedEntities",
       "organizations:ListAccounts",
       "organizations:DescribeAccount",
+      "resource-explorer:ListResources",
+      "resource-explorer:ListTags"
     ]
     resources = ["*"]
   }
