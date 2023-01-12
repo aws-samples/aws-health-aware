@@ -3,6 +3,8 @@ import boto3
 from datetime import datetime, timedelta
 from botocore.exceptions import ClientError
 import os
+import re
+import sys
 import time
 
 
@@ -116,107 +118,26 @@ def get_message_for_slack(event_details, event_type, affected_accounts, affected
     print("Message sent to Slack: ", message)
     return message
 
-def get_message_for_eventbridge(event_details, event_type, affected_accounts, affected_entities):
-    message = ""
-    if len(affected_entities) >= 1:
-        affected_entities = "\n".join(affected_entities)
-        if affected_entities == "UNKNOWN":
-            affected_entities = "All resources\nin region"
-    else:
-        affected_entities = "All resources\nin region"
-    if len(affected_accounts) >= 1:
-        affected_accounts = "\n".join(affected_accounts)
-    else:
-        affected_accounts = "All accounts\nin region"       
-    if event_type == "create":
-        message = {
-            "attachments": [
-                {
-                        "fields": [
-                            { "title": "Account(s)", "value": affected_accounts, "short": True },
-                            { "title": "Resource(s)", "value": affected_entities, "short": True },
-                            { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
-                            { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
-                            { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
-                            { "title": "Status", "value": event_details['successfulSet'][0]['event']['statusCode'], "short": True },
-                            { "title": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn'], "short": False },
-                            { "title": "Updates", "value": get_last_aws_update(event_details), "short": False }
-                        ],
-                }
-            ]
-        }
+# COMMON compose the event detail field for org and non-org
+def get_detail_for_eventbridge(event_details, affected_entities):
 
-    elif event_type == "resolve":
-        message = {
-            "attachments": [
-                {
-                        "fields": [
-                            { "title": "Account(s)", "value": affected_accounts, "short": True },
-                            { "title": "Resource(s)", "value": affected_entities, "short": True },
-                            { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
-                            { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
-                            { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
-                            { "title": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['endTime']), "short": True },
-                            { "title": "Status", "value": event_details['successfulSet'][0]['event']['statusCode'], "short": True },
-                            { "title": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn'], "short": False },
-                            { "title": "Updates", "value": get_last_aws_update(event_details), "short": False }
-                        ],
-                }
-            ]
-        }
-    print("SHD Message generated for EventBridge : ", message)
+    message = {}
+    
+    #replace the key "arn" with eventArn to match event format from aws.health
+    message["eventArn"] = ""
+    message.update(event_details['successfulSet'][0]['event'])
+    message["eventArn"] = message.pop("arn")
+    #message = event_details['successfulSet'][0]['event']  
+
+    message["eventDescription"] = event_details["successfulSet"][0]["eventDescription"]
+    message["affectedEntities"] = affected_entities
+
+    # Log length of json message for debugging if eventbridge may reject the message as messages
+    # are limited in size to 256KB
+    json_message = json.dumps(message)
+    print("PHD/SHD Message generated for EventBridge with estimated size ", str(sys.getsizeof(json_message) / 1024), "KB: ", message)
+
     return message
-
-def get_org_message_for_eventbridge(event_details, event_type, affected_org_accounts, affected_org_entities):
-    message = ""
-    if len(affected_org_entities) >= 1:
-        affected_org_entities = "\n".join(affected_org_entities)
-    else:
-        affected_org_entities = "All resources\nin region"
-    if len(affected_org_accounts) >= 1:
-        affected_org_accounts = "\n".join(affected_org_accounts)
-    else:
-        affected_org_accounts = "All accounts\nin region"
-    if event_type == "create":
-        message = {
-            "attachments": [
-                {
-                        "fields": [
-                            { "title": "Account(s)", "value": affected_org_accounts, "short": True },
-                            { "title": "Resource(s)", "value": affected_org_entities, "short": True },
-                            { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
-                            { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
-                            { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
-                            { "title": "Status", "value": event_details['successfulSet'][0]['event']['statusCode'], "short": True },
-                            { "title": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn'], "short": False },
-                            { "title": "Updates", "value": get_last_aws_update(event_details), "short": False }
-                        ],
-                }
-            ]
-        }
-
-    elif event_type == "resolve":
-        message = {
-            "attachments": [
-                {
-                        "fields": [
-                            { "title": "Account(s)", "value": affected_org_accounts, "short": True },
-                            { "title": "Resource(s)", "value": affected_org_entities, "short": True },
-                            { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
-                            { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
-                            { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
-                            { "title": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['endTime']), "short": True },
-                            { "title": "Status", "value": event_details['successfulSet'][0]['event']['statusCode'], "short": True },
-                            { "title": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn'], "short": False },
-                            { "title": "Updates", "value": get_last_aws_update(event_details), "short": False }
-                        ],
-                }
-            ]
-        }
-    json.dumps(message)
-    print("PHD/SHD Message generated for Event Bridge: ", message)
-    return message
-
 
 def get_org_message_for_slack(event_details, event_type, affected_org_accounts, affected_org_entities, slack_webhook):
     message = ""
@@ -556,6 +477,7 @@ def get_org_message_for_teams(event_details, event_type, affected_org_accounts, 
 
 
 def get_message_for_email(event_details, event_type, affected_accounts, affected_entities):
+    # Not srue why we have the new line in the affected entities code here
     if len(affected_entities) >= 1:
         affected_entities = "\n".join(affected_entities)
         if affected_entities == "UNKNOWN":

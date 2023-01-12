@@ -16,7 +16,7 @@ from boto3.dynamodb.conditions import Key, Attr
 from messagegenerator import get_message_for_slack, get_org_message_for_slack, get_message_for_chime, \
     get_org_message_for_chime, \
     get_message_for_teams, get_org_message_for_teams, get_message_for_email, get_org_message_for_email, \
-    get_org_message_for_eventbridge, get_message_for_eventbridge
+    get_detail_for_eventbridge
 
 # query active health API endpoint
 health_dns = socket.gethostbyname_ex('global.health.amazonaws.com')
@@ -35,7 +35,8 @@ config = Config(
     )
 )
 
-# Get Account Name
+# TODO decide if account_name should be blank on error
+# Get Account Name 
 def get_account_name(account_id):
     org_client = get_sts_token('organizations')
     try:
@@ -52,10 +53,13 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
     RECIPIENT = os.environ['TO_EMAIL']
     event_bus_name = get_secrets()["eventbusname"]
 
+    #get the list of resources from the array of affected entities
+    resources = get_resources_from_entities(affected_entities)
+
     if "None" not in event_bus_name:
         try:
             print("Sending the alert to Event Bridge")
-            send_to_eventbridge(get_message_for_eventbridge(event_details, event_type, affected_accounts, affected_entities), event_type, event_bus_name)
+            send_to_eventbridge(get_detail_for_eventbridge(event_details, affected_entities), event_type, resources, event_bus_name)
         except HTTPError as e:
             print("Got an error while sending message to EventBridge: ", e.code, e.reason)
         except URLError as e:
@@ -64,7 +68,7 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
     if "hooks.slack.com/services" in slack_url:
         try:
             print("Sending the alert to Slack Webhook Channel")
-            send_to_slack(get_message_for_slack(event_details, event_type, affected_accounts, affected_entities, slack_webhook="webhook"), slack_url)
+            send_to_slack(get_message_for_slack(event_details, event_type, affected_accounts, resources, slack_webhook="webhook"), slack_url)
         except HTTPError as e:
             print("Got an error while sending message to Slack: ", e.code, e.reason)
         except URLError as e:
@@ -73,7 +77,7 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
     if "hooks.slack.com/workflows" in slack_url:
         try:
             print("Sending the alert to Slack Workflows Channel")
-            send_to_slack(get_message_for_slack(event_details, event_type, affected_accounts, affected_entities, slack_webhook="workflow"), slack_url)
+            send_to_slack(get_message_for_slack(event_details, event_type, affected_accounts, resources, slack_webhook="workflow"), slack_url)
         except HTTPError as e:
             print("Got an error while sending message to Slack: ", e.code, e.reason)
         except URLError as e:
@@ -82,7 +86,7 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
     if "office.com/webhook" in teams_url:
         try:
             print("Sending the alert to Teams")
-            send_to_teams(get_message_for_teams(event_details, event_type, affected_accounts, affected_entities), teams_url)
+            send_to_teams(get_message_for_teams(event_details, event_type, affected_accounts, resources), teams_url)
         except HTTPError as e:
             print("Got an error while sending message to Teams: ", e.code, e.reason)
         except URLError as e:
@@ -92,7 +96,7 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
     if "none@domain.com" not in SENDER and RECIPIENT:
         try:
             print("Sending the alert to the emails")
-            send_email(event_details, event_type, affected_accounts, affected_entities)
+            send_email(event_details, event_type, affected_accounts, resources)
         except HTTPError as e:
             print("Got an error while sending message to Email: ", e.code, e.reason)
         except URLError as e:
@@ -101,7 +105,7 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
     if "hooks.chime.aws/incomingwebhooks" in chime_url:
         try:
             print("Sending the alert to Chime channel")
-            send_to_chime(get_message_for_chime(event_details, event_type, affected_accounts, affected_entities), chime_url)
+            send_to_chime(get_message_for_chime(event_details, event_type, affected_accounts, resources), chime_url)
         except HTTPError as e:
             print("Got an error while sending message to Chime: ", e.code, e.reason)
         except URLError as e:
@@ -116,13 +120,15 @@ def send_org_alert(event_details, affected_org_accounts, affected_org_entities, 
     RECIPIENT = os.environ['TO_EMAIL']
     event_bus_name = get_secrets()["eventbusname"]
 
+    #get the list of resources from the array of affected entities
+    resources = get_resources_from_entities(affected_org_entities)
+    
     if "None" not in event_bus_name:
         try:
             print("Sending the org alert to Event Bridge")
             send_to_eventbridge(
-                get_org_message_for_eventbridge(event_details, event_type, affected_org_accounts,
-                                                affected_org_entities),
-                event_type, event_bus_name)
+                get_detail_for_eventbridge(event_details, affected_org_entities),
+                event_type, resources, event_bus_name)
         except HTTPError as e:
             print("Got an error while sending message to EventBridge: ", e.code, e.reason)
         except URLError as e:
@@ -132,7 +138,7 @@ def send_org_alert(event_details, affected_org_accounts, affected_org_entities, 
         try:
             print("Sending the alert to Slack Webhook Channel")
             send_to_slack(
-                get_org_message_for_slack(event_details, event_type, affected_org_accounts, affected_org_entities, slack_webhook="webhook"),
+                get_org_message_for_slack(event_details, event_type, affected_org_accounts, resources, slack_webhook="webhook"),
                 slack_url)
         except HTTPError as e:
             print("Got an error while sending message to Slack: ", e.code, e.reason)
@@ -143,7 +149,7 @@ def send_org_alert(event_details, affected_org_accounts, affected_org_entities, 
         try:
             print("Sending the alert to Slack Workflow Channel")
             send_to_slack(
-                get_org_message_for_slack(event_details, event_type, affected_org_accounts, affected_org_entities, slack_webhook="workflow"),
+                get_org_message_for_slack(event_details, event_type, affected_org_accounts, resources, slack_webhook="workflow"),
                 slack_url)
         except HTTPError as e:
             print("Got an error while sending message to Slack: ", e.code, e.reason)
@@ -154,7 +160,7 @@ def send_org_alert(event_details, affected_org_accounts, affected_org_entities, 
         try:
             print("Sending the alert to Teams")
             send_to_teams(
-                get_org_message_for_teams(event_details, event_type, affected_org_accounts, affected_org_entities),
+                get_org_message_for_teams(event_details, event_type, affected_org_accounts, resources),
                 teams_url)
         except HTTPError as e:
             print("Got an error while sending message to Teams: ", e.code, e.reason)
@@ -165,7 +171,7 @@ def send_org_alert(event_details, affected_org_accounts, affected_org_entities, 
     if "none@domain.com" not in SENDER and RECIPIENT:
         try:
             print("Sending the alert to the emails")
-            send_org_email(event_details, event_type, affected_org_accounts, affected_org_entities)
+            send_org_email(event_details, event_type, affected_org_accounts, resources)
         except HTTPError as e:
             print("Got an error while sending message to Email: ", e.code, e.reason)
         except URLError as e:
@@ -175,7 +181,7 @@ def send_org_alert(event_details, affected_org_accounts, affected_org_entities, 
         try:
             print("Sending the alert to Chime channel")
             send_to_chime(
-                get_org_message_for_chime(event_details, event_type, affected_org_accounts, affected_org_entities),
+                get_org_message_for_chime(event_details, event_type, affected_org_accounts, resources),
                 chime_url)
         except HTTPError as e:
             print("Got an error while sending message to Chime: ", e.code, e.reason)
@@ -296,23 +302,6 @@ def get_health_accounts(health_client, event, event_arn):
           affected_accounts = []
     return affected_accounts
 
-def get_health_entities(health_client, event, event_arn):
-    affected_entities = []
-    event_entities_paginator = health_client.get_paginator('describe_affected_entities')
-    event_entities_page_iterator = event_entities_paginator.paginate(
-        filter = {
-            'eventArns': [
-                event_arn
-            ]
-        }
-    )
-    for event_entities_page in event_entities_page_iterator:
-        json_event_entities = json.dumps(event_entities_page, default=myconverter)
-        parsed_event_entities = json.loads(json_event_entities)
-        for entity in parsed_event_entities['entities']:
-            affected_entities.append(entity['entityValue'])
-    return affected_entities
-
 # organization view affected accounts
 def get_health_org_accounts(health_client, event, event_arn):
     affected_org_accounts = []
@@ -326,30 +315,59 @@ def get_health_org_accounts(health_client, event, event_arn):
         affected_org_accounts = affected_org_accounts + (parsed_event_accounts['affectedAccounts'])
     return affected_org_accounts
 
+# get the array of affected entities for all affected accounts and return as an array of JSON objects
+def get_affected_entities(health_client, event_arn, affected_accounts, is_org_mode):  
+    affected_entity_array = []
 
-# organization view affected entities (aka resources)
-def get_health_org_entities(health_client, event, event_arn, affected_org_accounts):
-    if len(affected_org_accounts) >= 1:
-        affected_org_accounts = affected_org_accounts[0]
-        event_entities_paginator = health_client.get_paginator('describe_affected_entities_for_organization')
-        event_entities_page_iterator = event_entities_paginator.paginate(
-            organizationEntityFilters=[
-                {
-                    'awsAccountId': affected_org_accounts,
-                    'eventArn': event_arn
+    for account in affected_accounts: 
+
+        if is_org_mode:
+            event_entities_paginator = health_client.get_paginator('describe_affected_entities_for_organization')
+            event_entities_page_iterator = event_entities_paginator.paginate(
+                organizationEntityFilters=[
+                    {
+                        'awsAccountId': account,
+                        'eventArn': event_arn
+                    }
+                ]
+            )
+        else:
+            event_entities_paginator = health_client.get_paginator('describe_affected_entities')
+            event_entities_page_iterator = event_entities_paginator.paginate(
+                filter = {
+                    'eventArns': [
+                        event_arn
+                    ]
                 }
-            ]
-        )
-        affected_org_entities = []
+            )
+
         for event_entities_page in event_entities_page_iterator:
             json_event_entities = json.dumps(event_entities_page, default=myconverter)
             parsed_event_entities = json.loads(json_event_entities)
-            for entity in parsed_event_entities['entities']:
-                affected_org_entities.append(entity['entityValue'])
-        return affected_org_entities
-    else:
-        affected_entities = ""
-        return affected_entities
+            for entity in parsed_event_entities['entities']:                  
+                entity.pop("entityArn") #remove entityArn to avoid confusion with the arn of the entityValue (not present)
+                entity.pop("eventArn") #remove eventArn duplicate of detail.arn
+                entity.pop("lastUpdatedTime") #remove for brevity
+                if is_org_mode:
+                    entity['awsAccountName'] = get_account_name(entity['awsAccountId'])
+                affected_entity_array.append(entity)
+    
+    return affected_entity_array
+
+#COMMON
+#get the entityValues from the array and return as an array (of strings) for use with chat channels
+#don't list entities which are accounts (handled separately for chat applications)
+def get_resources_from_entities(affected_entity_array):
+    
+    resources = []
+    
+    for entity in affected_entity_array:
+        if entity['entityValue'] == "UNKNOWN":
+            #UNKNOWN indicates a public/non-accountspecific event, no resources
+            pass
+        elif entity['entityValue'] != "AWS_ACCOUNT" and entity['entityValue'] != entity['awsAccountId']:
+            resources.append(entity['entityValue'])
+    return resources
 
 
 # For Customers using AWS Organizations
@@ -477,8 +495,9 @@ def update_ddb(event_arn, str_update, status_code, event_details, affected_accou
                     # Cleanup: DynamoDB entry deleted 24 hours after last update
                 }
             )
-            affected_accounts_details = [
-                    f"{get_account_name(account_id)} ({account_id})" for account_id in affected_accounts]
+
+            affected_accounts_details = affected_accounts
+
             # send to configured endpoints
             if status_code != "closed":
                 send_alert(event_details, affected_accounts_details, affected_entities, event_type="create")
@@ -670,7 +689,7 @@ def describe_events(health_client):
 
                 # get non-organizational view requirements
                 affected_accounts = get_health_accounts(health_client, event, event_arn)
-                affected_entities = get_health_entities(health_client, event, event_arn)
+                affected_entities = get_affected_entities(health_client, event_arn, affected_accounts, is_org_mode = False)
 
                 # get event details
                 event_details = json.dumps(describe_event_details(health_client, event_arn), default=myconverter)
@@ -748,7 +767,7 @@ def describe_org_events(health_client):
                     else:
                         update_org_ddb_flag=True
 
-                affected_org_entities = get_health_org_entities(health_client, event, event_arn, affected_org_accounts)
+                affected_org_entities = get_affected_entities(health_client, event_arn, affected_org_accounts, is_org_mode = True)
                 # get event details
                 event_details = json.dumps(describe_org_event_details(health_client, event_arn, affected_org_accounts),
                                         default=myconverter)
@@ -795,14 +814,20 @@ def describe_org_event_details(health_client, event_arn, affected_org_accounts):
         response = describe_event_details(health_client, event_arn)
         return response
 
+def eventbridge_generate_entries(message, resources, event_bus):
+    return [ {'Source': 'aha', 'DetailType': 'AHA Event', 'Resources': resources, 'Detail': json.dumps(message),
+         'EventBusName': event_bus}, ]
 
-def send_to_eventbridge(message, event_type, event_bus):
+def send_to_eventbridge(message, event_type, resources, event_bus):
     print("Sending response to Eventbridge - event_type, event_bus", event_type, event_bus)
     client = boto3.client('events')
-    response = client.put_events(Entries=[
-        {'Source': 'aha', 'DetailType': event_type, 'Detail': '{ "mydata": ' + json.dumps(message) + ' }',
-         'EventBusName': event_bus}, ])
-    print("Response is:", response)
+
+    entries = eventbridge_generate_entries(message, resources, event_bus)
+        
+    print("Sending entries: ", entries)
+
+    response = client.put_events(Entries=entries)
+    print("Response from eventbridge is:", response)
     
 def getAccountIDs():
     account_ids  = ""
@@ -864,6 +889,7 @@ def main(event, context):
 
     # check for AWS Organizations Status
     if org_status == "No":
+        #TODO update text below to reflect current functionality
         print("AWS Organizations is not enabled. Only Service Health Dashboard messages will be alerted.")
         describe_events(health_client)
     else:
