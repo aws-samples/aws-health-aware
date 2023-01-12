@@ -204,6 +204,7 @@ resource "aws_s3_bucket" "AHA-S3Bucket-PrimaryRegion" {
 }
 
 resource "aws_s3_bucket_acl" "AHA-S3Bucket-PrimaryRegion" {
+    count  = var.ExcludeAccountIDs != "" ? 1 : 0
     bucket = aws_s3_bucket.AHA-S3Bucket-PrimaryRegion[0].id
     acl    = "private"
 }
@@ -427,7 +428,7 @@ resource "aws_secretsmanager_secret" "AssumeRoleArn" {
         "Name"          = "AHA-AssumeRoleArn"
     }
     dynamic "replica" {
-      for_each = var.aha_secondary_region == "" ? [0] : [1]
+      for_each = var.aha_secondary_region == "" ? [] : [1]
       content {
         region = var.aha_secondary_region
       }
@@ -663,7 +664,7 @@ resource "aws_lambda_function" "AHA-LambdaFunction-PrimaryRegion" {
     memory_size                    = 128
     timeout                        = 600
     filename                       = data.archive_file.lambda_zip.output_path
-    source_code_hash               = filebase64sha256(data.archive_file.lambda_zip.output_path)
+    source_code_hash               = data.archive_file.lambda_zip.output_base64sha256
 #    s3_bucket                      = var.S3Bucket
 #    s3_key                         = var.S3Key
     reserved_concurrent_executions = -1
@@ -710,7 +711,7 @@ resource "aws_lambda_function" "AHA-LambdaFunction-SecondaryRegion" {
     memory_size                    = 128
     timeout                        = 600
     filename                       = data.archive_file.lambda_zip.output_path
-    source_code_hash               = filebase64sha256(data.archive_file.lambda_zip.output_path)
+    source_code_hash               = data.archive_file.lambda_zip.output_base64sha256
 #    s3_bucket                      = var.S3Bucket
 #    s3_key                         = var.S3Key
     reserved_concurrent_executions = -1
