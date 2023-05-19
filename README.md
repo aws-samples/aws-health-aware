@@ -174,7 +174,6 @@ The 3 deployment methods for AHA are:
 5. In the *CloudFormation* console **click** *Create stack > With new resources (standard)*.   
 6. Under *Template Source* **click** *Upload a template file* and **click** *Choose file*  and select `CFN_DEPLOY_AHA.yml` **Click** *Next*.   
  - In *Stack name* type a stack name (i.e. AHA-Deployment).   
- - In *AWSOrganizationsEnabled* leave it set to default which is `No`. If you do have AWS Organizations enabled and you want to aggregate across all your accounts, you should be following the step for [AHA for users who ARE using AWS Organizations](#aha-with-aws-organizations-using-terraform)  
  - In *AWSOrganizationsEnabled* leave it set to default which is `No`. If you do have AWS Organizations enabled and you want to aggregate across all your accounts, you should be following the steps for [AHA for users who ARE using AWS Organizations (Management Account)](#aha-with-aws-organizations-on-management-account-using-cloudformation) or [AHA for users WITH AWS Organizations (Member Account)](#aha-with-aws-organizations-on-member-account-using-cloudformation)
  - In *AWSHealthEventType* select whether you want to receive *all* event types or *only* issues.   
  - In *S3Bucket* type ***just*** the bucket name of the S3 bucket used in step 3  (e.g. my-aha-bucket).    
