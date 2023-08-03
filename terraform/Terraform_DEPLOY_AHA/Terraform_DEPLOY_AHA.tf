@@ -669,7 +669,7 @@ resource "aws_lambda_function" "AHA-LambdaFunction-PrimaryRegion" {
 #    s3_key                         = var.S3Key
     reserved_concurrent_executions = -1
     role                           = aws_iam_role.AHA-LambdaExecutionRole.arn
-    runtime                        = "python3.8"
+    runtime                        = "python3.11"
 
     environment {
         variables = {
@@ -716,7 +716,7 @@ resource "aws_lambda_function" "AHA-LambdaFunction-SecondaryRegion" {
 #    s3_key                         = var.S3Key
     reserved_concurrent_executions = -1
     role                           = aws_iam_role.AHA-LambdaExecutionRole.arn
-    runtime                        = "python3.8"
+    runtime                        = "python3.11"
 
     environment {
         variables = {

@@ -318,7 +318,7 @@ Resources:
                 Properties:
                   Description: Copies AHA .zip from a source S3 bucket to a destination
                   Handler: index.handler
-                  Runtime: python3.8
+                  Runtime: python3.11
                   Role: !GetAtt 'CopyAHARole.Arn'
                   Timeout: 240
                   Code:
@@ -404,7 +404,7 @@ Resources:
                   MemorySize: 128
                   Timeout: 600
                   Role: ${LambdaExecutionRole.Arn}
-                  Runtime: python3.8
+                  Runtime: python3.11
                   Environment:
                     Variables:
                       REGIONS: ${Regions}
@@ -654,7 +654,7 @@ Resources:
       Timeout: 600
       Role:
         'Fn::Sub': '${LambdaExecutionRole.Arn}'
-      Runtime: python3.8
+      Runtime: python3.11
       Environment:
         Variables:
           ACCOUNT_IDS:

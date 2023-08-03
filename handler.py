@@ -18,6 +18,8 @@ from messagegenerator import get_message_for_slack, get_org_message_for_slack, g
     get_message_for_teams, get_org_message_for_teams, get_message_for_email, get_org_message_for_email, \
     get_detail_for_eventbridge
 
+print("boto3 version: ",boto3.__version__)
+
 # query active health API endpoint
 health_dns = socket.gethostbyname_ex('global.health.amazonaws.com')
 (current_endpoint, global_endpoint, ip_endpoint) = health_dns
