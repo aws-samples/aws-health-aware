@@ -27,7 +27,7 @@ provider "aws" {
 
 # Comment below - if needed to use s3_bucket, s3_key for consistency with cf 
 locals {
-    source_files = ["../../handler.py", "../../messagegenerator.py"]
+    source_files = ["${path.module}/../../handler.py", "${path.module}/../../messagegenerator.py"]
 }
 data "template_file" "t_file" {
     count = "${length(local.source_files)}"
@@ -35,7 +35,7 @@ data "template_file" "t_file" {
 }
 data "archive_file" "lambda_zip" {
     type          = "zip"
-    output_path   = "lambda_function.zip"
+    output_path   = "${path.module}/lambda_function.zip"
     source {
       filename = "${basename(local.source_files[0])}"
       content  = "${data.template_file.t_file.0.rendered}"
