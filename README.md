@@ -142,6 +142,20 @@ AHA can send to multiple endpoints (webhook URLs, Email or EventBridge). To use 
 4.	Give your Event bus a name and **click** *Create*.
 5.  For the deployment we will need the *Name* of the Event bus **(not the ARN, e.g. aha-eb01)**.
 
+## Using AWS Health Delegated Administrator with AHA
+
+On 2023-07-27, AWS Health released the Delegated Admin feature. Using this feature, you can deploy AHA in a Member Account without added permissions in the Org Management account.
+
+To enable this feature:
+1. Know the AWS Account ID of the Member Account you want to enable as a delegated administrator for AWS Health (e.g. 123456789012)
+1. In the Org Management Account, run the command `aws organizations register-delegated-administrator --account-id ACCOUNT_ID --service-principal  health.amazonaws.com` replacing ACCOUNT_ID with the ID of your Member Account
+1. Deploy AHA in the Member Account using the steps for 
+  2.  [AHA for users who ARE using AWS Organizations (CloudFormation)](#aha-with-aws-organizations-on-management-account-using-cloudformation)
+  2.  [AHA for users who ARE using AWS Organizations (Terraform)](#aha-with-aws-organizations-using-terraform)
+
+
+Read more: https://docs.aws.amazon.com/health/latest/ug/delegated-administrator-organizational-view.html
+
 # Deployment Options
 
 ## CloudFormation
@@ -173,8 +187,7 @@ The 3 deployment methods for AHA are:
 4. In your AWS console go to *CloudFormation*.   
 5. In the *CloudFormation* console **click** *Create stack > With new resources (standard)*.   
 6. Under *Template Source* **click** *Upload a template file* and **click** *Choose file*  and select `CFN_DEPLOY_AHA.yml` **Click** *Next*.   
- - In *Stack name* type a stack name (i.e. AHA-Deployment).   
- - In *AWSOrganizationsEnabled* leave it set to default which is `No`. If you do have AWS Organizations enabled and you want to aggregate across all your accounts, you should be following the step for [AHA for users who ARE using AWS Organizations](#aha-with-aws-organizations-using-terraform)  
+ - In *Stack name* type a stack name (i.e. AHA-Deployment).
  - In *AWSOrganizationsEnabled* leave it set to default which is `No`. If you do have AWS Organizations enabled and you want to aggregate across all your accounts, you should be following the steps for [AHA for users who ARE using AWS Organizations (Management Account)](#aha-with-aws-organizations-on-management-account-using-cloudformation) or [AHA for users WITH AWS Organizations (Member Account)](#aha-with-aws-organizations-on-member-account-using-cloudformation)
  - In *AWSHealthEventType* select whether you want to receive *all* event types or *only* issues.   
  - In *S3Bucket* type ***just*** the bucket name of the S3 bucket used in step 3  (e.g. my-aha-bucket).    
@@ -228,6 +241,9 @@ The 3 deployment methods for AHA are:
 10. Wait until *Status* changes to *CREATE_COMPLETE* (roughly 2-4 minutes or if deploying in a secondary region, it can take up to 30 minutes). 
 
 ## AHA With AWS Organizations on Member Account using CloudFormation
+
+> Note: On 2023-07-27, AWS Health released the Delegated Admin feature which enables AHA deployments in member accounts without the extra steps below.
+See: [Using AWS Health Delegated Administrator with AHA](#using-aws-health-delegated-administrator-with-aha)
 
 ### Prerequisites
 
@@ -356,6 +372,9 @@ $ terraform apply
 ```
 
 ## AHA WITH AWS Organizations on Member Account using Terraform
+
+> Note: On 2023-07-27, AWS Health released the Delegated Admin feature which enables AHA deployments in member accounts without the extra steps below.
+See: [Using AWS Health Delegated Administrator with AHA](#using-aws-health-delegated-administrator-with-aha)
 
 1. [Enable Health Organizational View](https://docs.aws.amazon.com/health/latest/ug/enable-organizational-view-in-health-console.html) from the console, so that you can aggregate all Personal Health Dashboard (PHD) events for all accounts in your AWS Organization.
 2. Have at least 1 [endpoint](#configuring-an-endpoint) configured (you can have multiple)
