@@ -443,7 +443,9 @@ def update_org_ddb(event_arn, str_update, status_code, event_details, affected_o
                     }
                 )
                 affected_org_accounts_details = [
-                    f"{get_account_name(account_id)} ({account_id})" for account_id in affected_org_accounts]                
+                    f"{get_account_name(account_id)} ({account_id})" for account_id in affected_org_accounts]
+                if item['affectedAccountIDs'] != affected_org_accounts:
+                    affected_org_accounts = set(affected_org_accounts) - set(item['affectedAccountIDs'])
                 # send to configured endpoints
                 if status_code != "closed":
                     send_org_alert(event_details, affected_org_accounts_details, affected_org_entities, event_type="create")
