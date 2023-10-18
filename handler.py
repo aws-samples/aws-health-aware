@@ -21,21 +21,14 @@ from messagegenerator import get_message_for_slack, get_org_message_for_slack, g
 print("boto3 version: ",boto3.__version__)
 
 # query active health API endpoint
-health_dns = socket.gethostbyname_ex('global.health.amazonaws.com')
-(current_endpoint, global_endpoint, ip_endpoint) = health_dns
-health_active_list = current_endpoint.split('.')
-health_active_region = health_active_list[1]
-print("current health region: ", health_active_region)
+def get_health_active_region():
+    health_dns = socket.gethostbyname_ex('global.health.amazonaws.com')
+    (current_endpoint, global_endpoint, ip_endpoint) = health_dns
+    health_active_list = current_endpoint.split('.')
+    health_active_region = health_active_list[1]
+    print("current health region: ", health_active_region)
+    return health_active_region
 
-# create a boto3 health client w/ backoff/retry
-config = Config(
-    region_name=health_active_region,
-    retries=dict(
-        max_attempts=10  # org view apis have a lower tps than the single
-        # account apis so we need to use larger
-        # backoff/retry values than than the boto defaults
-    )
-)
 
 # TODO decide if account_name should be blank on error
 # Get Account Name 
@@ -868,6 +861,15 @@ def get_sts_token(service):
         SECRET_KEY    = acct_b['Credentials']['SecretAccessKey']
         SESSION_TOKEN = acct_b['Credentials']['SessionToken']
         
+        # create a boto3 health client w/ backoff/retry
+        config = Config(
+            region_name=get_health_active_region(),
+            retries=dict(
+                max_attempts=10  # org view apis have a lower tps than the single
+                # account apis so we need to use larger
+                # backoff/retry values than than the boto defaults
+            )
+        )
         # create service client using the assumed role credentials, e.g. S3
         boto3_client = boto3.client(
           service,
