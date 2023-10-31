@@ -84,7 +84,16 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
             print("Got an error while sending message to Slack: ", e.code, e.reason)
         except URLError as e:
             print("Server connection failed: ", e.reason)
-            pass            
+            pass          
+    if "hooks.slack.com/triggers" in slack_url:
+        try:
+            print("Sending the alert to Slack triggers Channel")
+            send_to_slack(get_message_for_slack(event_details, event_type, affected_accounts, resources, slack_webhook="triggers"), slack_url)
+        except HTTPError as e:
+            print("Got an error while sending message to Slack: ", e.code, e.reason)
+        except URLError as e:
+            print("Server connection failed: ", e.reason)
+            pass
     if "office.com/webhook" in teams_url:
         try:
             print("Sending the alert to Teams")
@@ -152,6 +161,17 @@ def send_org_alert(event_details, affected_org_accounts, affected_org_entities, 
             print("Sending the alert to Slack Workflow Channel")
             send_to_slack(
                 get_org_message_for_slack(event_details, event_type, affected_org_accounts, resources, slack_webhook="workflow"),
+                slack_url)
+        except HTTPError as e:
+            print("Got an error while sending message to Slack: ", e.code, e.reason)
+        except URLError as e:
+            print("Server connection failed: ", e.reason)
+            pass      
+    if "hooks.slack.com/triggers" in slack_url:
+        try:
+            print("Sending the alert to Slack triggers Channel")
+            send_to_slack(
+                get_org_message_for_slack(event_details, event_type, affected_org_accounts, resources, slack_webhook="triggers"),
                 slack_url)
         except HTTPError as e:
             print("Got an error while sending message to Slack: ", e.code, e.reason)
