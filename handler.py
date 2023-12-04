@@ -323,6 +323,7 @@ def get_affected_entities(health_client, event_arn, affected_accounts, is_org_mo
 
     for account in affected_accounts: 
 
+        account_name = ""
         if is_org_mode:
             event_entities_paginator = health_client.get_paginator('describe_affected_entities_for_organization')
             event_entities_page_iterator = event_entities_paginator.paginate(
@@ -333,6 +334,7 @@ def get_affected_entities(health_client, event_arn, affected_accounts, is_org_mo
                     }
                 ]
             )
+            account_name = get_account_name(account)
         else:
             event_entities_paginator = health_client.get_paginator('describe_affected_entities')
             event_entities_page_iterator = event_entities_paginator.paginate(
@@ -351,7 +353,7 @@ def get_affected_entities(health_client, event_arn, affected_accounts, is_org_mo
                 entity.pop("eventArn") #remove eventArn duplicate of detail.arn
                 entity.pop("lastUpdatedTime") #remove for brevity
                 if is_org_mode:
-                    entity['awsAccountName'] = get_account_name(entity['awsAccountId'])
+                    entity['awsAccountName'] = account_name
                 affected_entity_array.append(entity)
     
     return affected_entity_array
