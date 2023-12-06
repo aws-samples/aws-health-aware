@@ -334,7 +334,8 @@ def get_affected_entities(health_client, event_arn, affected_accounts, is_org_mo
                     }
                 ]
             )
-            account_name = get_account_name(account)
+            if len(affected_accounts) <= 100:
+                account_name = get_account_name(account)
         else:
             event_entities_paginator = health_client.get_paginator('describe_affected_entities')
             event_entities_page_iterator = event_entities_paginator.paginate(
