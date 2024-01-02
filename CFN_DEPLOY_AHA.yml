@@ -657,6 +657,10 @@ Resources:
       Runtime: python3.11
       Environment:
         Variables:
+          Slack: !If [UsingSlack, "True", !Ref 'AWS::NoValue']
+          Teams: !If [UsingTeams, "True", !Ref 'AWS::NoValue']
+          Chime: !If [UsingChime, "True", !Ref 'AWS::NoValue']
+          Eventbridge: !If [UsingEventBridge, "True", !Ref 'AWS::NoValue']
           ACCOUNT_IDS:
             Ref: AccountIDs        
           REGIONS:
