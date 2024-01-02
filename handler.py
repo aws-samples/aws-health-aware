@@ -699,11 +699,23 @@ def get_secrets():
     session = boto3.session.Session()
     client = session.client(service_name="secretsmanager", region_name=region_name)
     # Iteration through the configured AWS Secrets
-    secrets["teams"] = get_secret(secret_teams_name, client)
-    secrets["slack"] = get_secret(secret_slack_name, client)
-    secrets["chime"] = get_secret(secret_chime_name, client)
-    secrets["ahaassumerole"] = get_secret(secret_assumerole_name, client)
-    secrets["eventbusname"] = get_secret(event_bus_name, client)
+    secrets["teams"] = (
+        get_secret(secret_teams_name, client) if "Teams" in os.environ else "None"
+    )
+    secrets["slack"] = (
+        get_secret(secret_slack_name, client) if "Slack" in os.environ else "None"
+    )
+    secrets["chime"] = (
+        get_secret(secret_chime_name, client) if "Chime" in os.environ else "None"
+    )
+    secrets["ahaassumerole"] = (
+        get_secret(secret_assumerole_name, client)
+        if os.environ["MANAGEMENT_ROLE_ARN"] != "None"
+        else "None"
+    )
+    secrets["eventbusname"] = (
+        get_secret(event_bus_name, client) if "Eventbridge" in os.environ else "None"
+    )
 
     # uncomment below to verify secrets values
     # print("Secrets: ",secrets)
@@ -711,9 +723,6 @@ def get_secrets():
 
 
 def get_secret(secret_name, client):
-    if secret_name == "None":
-        print(f"No AWS Secret configured for {secret_name}, skipping")
-        return "None"
     try:
         get_secret_value_response = client.get_secret_value(SecretId=secret_name)
     except ClientError as e:
