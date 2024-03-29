@@ -29,20 +29,20 @@ provider "aws" {
 locals {
     source_files = ["${path.module}/../../handler.py", "${path.module}/../../messagegenerator.py"]
 }
-data "template_file" "t_file" {
+data "local_file" "t_file" {
     count = "${length(local.source_files)}"
-    template = "${file(element(local.source_files, count.index))}"
+    filename = "${element(local.source_files, count.index)}"
 }
 data "archive_file" "lambda_zip" {
     type          = "zip"
     output_path   = "${path.module}/lambda_function.zip"
     source {
       filename = "${basename(local.source_files[0])}"
-      content  = "${data.template_file.t_file.0.rendered}"
+      content  = "${data.local_file.t_file[0].content}"
     }
     source {
       filename = "${basename(local.source_files[1])}"
-      content  = "${data.template_file.t_file.1.rendered}"
+      content  = "${data.local_file.t_file[1].content}"
   }
 }
 
