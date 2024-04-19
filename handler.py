@@ -428,7 +428,6 @@ def get_affected_entities(health_client, event_arn, is_org_mode, affected_accoun
                 )  # remove entityArn to avoid confusion with the arn of the entityValue (not present)
                 entity.pop("eventArn")  # remove eventArn duplicate of detail.arn
                 entity.pop("lastUpdatedTime")  # remove for brevity
-                entity["awsAccountName"] = get_account_name(entity['awsAccountId'])
                 affected_entity_array.append(entity)
 
     return affected_entity_array
