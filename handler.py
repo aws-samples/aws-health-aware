@@ -365,26 +365,6 @@ def send_org_email(
         },
     )
 
-
-# non-organization view affected accounts
-def get_health_accounts(health_client, event, event_arn):
-    affected_accounts = []
-    event_accounts_paginator = health_client.get_paginator("describe_affected_entities")
-    event_accounts_page_iterator = event_accounts_paginator.paginate(
-        filter={"eventArns": [event_arn]}
-    )
-    for event_accounts_page in event_accounts_page_iterator:
-        json_event_accounts = json.dumps(event_accounts_page, default=myconverter)
-        parsed_event_accounts = json.loads(json_event_accounts)
-        try:
-            affected_accounts.append(
-                parsed_event_accounts["entities"][0]["awsAccountId"]
-            )
-        except Exception:
-            affected_accounts = []
-    return affected_accounts
-
-
 # organization view affected accounts
 def get_health_org_accounts(health_client, event, event_arn):
     affected_org_accounts = []
@@ -402,12 +382,15 @@ def get_health_org_accounts(health_client, event, event_arn):
 
 
 # get the array of affected entities for all affected accounts and return as an array of JSON objects
-def get_affected_entities(health_client, event_arn, affected_accounts, is_org_mode):
+def get_affected_entities(health_client, event_arn, is_org_mode, affected_accounts = None):
     affected_entity_array = []
 
-    for account in affected_accounts:
-        account_name = ""
-        if is_org_mode:
+    if is_org_mode:
+        if affected_accounts == None or affected_accounts == []:
+            raise ValueError("No affected accounts provided for organization view")
+
+        for account in affected_accounts:
+            account_name = ""
             event_entities_paginator = health_client.get_paginator(
                 "describe_affected_entities_for_organization"
             )
@@ -417,13 +400,25 @@ def get_affected_entities(health_client, event_arn, affected_accounts, is_org_mo
                 ]
             )
             account_name = get_account_name(account)
-        else:
-            event_entities_paginator = health_client.get_paginator(
-                "describe_affected_entities"
-            )
-            event_entities_page_iterator = event_entities_paginator.paginate(
-                filter={"eventArns": [event_arn]}
-            )
+
+            for event_entities_page in event_entities_page_iterator:
+                json_event_entities = json.dumps(event_entities_page, default=myconverter)
+                parsed_event_entities = json.loads(json_event_entities)
+                for entity in parsed_event_entities['entities']:                  
+                    entity.pop("entityArn") #remove entityArn to avoid confusion with the arn of the entityValue (not present)
+                    entity.pop("eventArn") #remove eventArn duplicate of detail.arn
+                    entity.pop("lastUpdatedTime") #remove for brevity
+                    if is_org_mode:
+                        entity['awsAccountName'] = account_name
+                    affected_entity_array.append(entity)
+                
+    else:
+        event_entities_paginator = health_client.get_paginator(
+            "describe_affected_entities"
+        )
+        event_entities_page_iterator = event_entities_paginator.paginate(
+            filter={"eventArns": [event_arn]}
+        )
 
         for event_entities_page in event_entities_page_iterator:
             json_event_entities = json.dumps(event_entities_page, default=myconverter)
@@ -435,7 +430,7 @@ def get_affected_entities(health_client, event_arn, affected_accounts, is_org_mo
                 entity.pop("eventArn")  # remove eventArn duplicate of detail.arn
                 entity.pop("lastUpdatedTime")  # remove for brevity
                 if is_org_mode:
-                    entity["awsAccountName"] = account_name
+                    entity["awsAccountName"] = get_account_name(entity['awsAccountId'])
                 affected_entity_array.append(entity)
 
     return affected_entity_array
@@ -779,10 +774,10 @@ def describe_events(health_client):
                 str_update = str_update.strftime(str_ddb_format_sec)
 
                 # get non-organizational view requirements
-                affected_accounts = get_health_accounts(health_client, event, event_arn)
                 affected_entities = get_affected_entities(
-                    health_client, event_arn, affected_accounts, is_org_mode=False
+                    health_client, event_arn, is_org_mode=False
                 )
+                affected_accounts = [affected_entities[0]['awsAccountId']]
 
                 # get event details
                 event_details = json.dumps(
@@ -887,7 +882,7 @@ def describe_org_events(health_client):
                         update_org_ddb_flag = True
 
                 affected_org_entities = get_affected_entities(
-                    health_client, event_arn, affected_org_accounts, is_org_mode=True
+                    health_client, event_arn, is_org_mode=True, affected_accounts=affected_org_accounts
                 )
                 # get event details
                 event_details = json.dumps(
