@@ -405,9 +405,9 @@ def get_affected_entities(health_client, event_arn, is_org_mode, affected_accoun
                 json_event_entities = json.dumps(event_entities_page, default=myconverter)
                 parsed_event_entities = json.loads(json_event_entities)
                 for entity in parsed_event_entities['entities']:                  
-                    entity.pop("entityArn") #remove entityArn to avoid confusion with the arn of the entityValue (not present)
-                    entity.pop("eventArn") #remove eventArn duplicate of detail.arn
-                    entity.pop("lastUpdatedTime") #remove for brevity
+                    entity.pop("entityArn", None) #remove entityArn to avoid confusion with the arn of the entityValue (not present)
+                    entity.pop("eventArn", None) #remove eventArn duplicate of detail.arn
+                    entity.pop("lastUpdatedTime", None) #remove for brevity
                     entity['awsAccountName'] = account_name
                     affected_entity_array.append(entity)
                 
@@ -424,10 +424,11 @@ def get_affected_entities(health_client, event_arn, is_org_mode, affected_accoun
             parsed_event_entities = json.loads(json_event_entities)
             for entity in parsed_event_entities["entities"]:
                 entity.pop(
-                    "entityArn"
+                    "entityArn",
+                    None
                 )  # remove entityArn to avoid confusion with the arn of the entityValue (not present)
-                entity.pop("eventArn")  # remove eventArn duplicate of detail.arn
-                entity.pop("lastUpdatedTime")  # remove for brevity
+                entity.pop("eventArn", None)  # remove eventArn duplicate of detail.arn
+                entity.pop("lastUpdatedTime", None)  # remove for brevity
                 affected_entity_array.append(entity)
 
     return affected_entity_array
@@ -774,7 +775,7 @@ def describe_events(health_client):
                 affected_entities = get_affected_entities(
                     health_client, event_arn, is_org_mode=False
                 )
-                affected_accounts = [affected_entities[0]['awsAccountId']]
+                affected_accounts = [affected_entities[0]['awsAccountId']] if affected_entities and 'awsAccountId' in affected_entities[0] else []
 
                 # get event details
                 event_details = json.dumps(
