@@ -268,7 +268,7 @@ See: [Using AWS Health Delegated Administrator with AHA](#using-aws-health-deleg
 6. Scroll to the bottom and **click** *Next* again.
 7. Scroll to the bottom and **click** the *checkbox* and **click** *Create stack*.
 8. Wait until *Status* changes to *CREATE_COMPLETE* (roughly 1-2 minutes). This will create an IAM role with the necessary AWS Organizations and AWS Health API permissions for the member account to assume.
-9. In the *Outputs* tab, there will be a value for *AWSHealthAwareRoleForPHDEventsArn* (e.g. arn:aws:iam::000123456789:role/aha-org-role-AWSHealthAwareRoleForPHDEvents-ABCSDE12201), copy that down as you will need it for step 16.
+9. In the *Outputs* tab, there will be a value for *AWSHealthAwareRoleForPHDEventsArn* (e.g. arn:aws:iam::000123456789:role/aha-org-role-AWSHealthAwareRoleForPHDEvents-ABCSDE12201), copy that down as you will need it for step 14.
 10. Back In the root of the package you downloaded/cloned you'll have two files; `handler.py` and `messagegenerator.py`. Use your tool of choice to zip them both up and name them with a unique name (e.g. aha-v1.8.zip). **Note: Putting the version number in the name will make upgrading AHA seamless.**
 11. Upload the .zip you created in Step 11 to an S3 in the same region you plan to deploy this in.
 12. Login to the member account you plan to deploy this in and in your AWS console go to *CloudFormation*.
