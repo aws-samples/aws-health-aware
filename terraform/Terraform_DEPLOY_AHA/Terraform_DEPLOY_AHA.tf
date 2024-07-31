@@ -673,6 +673,10 @@ resource "aws_lambda_function" "AHA-LambdaFunction-PrimaryRegion" {
 
     environment {
         variables = {
+            "Slack"               = var.SlackWebhookURL != "" ? "True" : null
+            "Team"                = var.MicrosoftTeamsWebhookURL != "" ? "True" : null
+            "Chime"               = var.AmazonChimeWebhookURL != "" ? "True" : null
+            "Eventbridge"         = var.EventBusName != "" ? "True" : null
             "DYNAMODB_TABLE"      = "${var.dynamodbtable}-${random_string.resource_code.result}"
             "EMAIL_SUBJECT"       = var.Subject
             "EVENT_SEARCH_BACK"   = var.EventSearchBack
@@ -720,6 +724,10 @@ resource "aws_lambda_function" "AHA-LambdaFunction-SecondaryRegion" {
 
     environment {
         variables = {
+            "Slack"               = var.SlackWebhookURL != "" ? "True" : null
+            "Team"                = var.MicrosoftTeamsWebhookURL != "" ? "True" : null
+            "Chime"               = var.AmazonChimeWebhookURL != "" ? "True" : null
+            "Eventbridge"         = var.EventBusName != "" ? "True" : null
             "DYNAMODB_TABLE"      = "${var.dynamodbtable}-${random_string.resource_code.result}"
             "EMAIL_SUBJECT"       = var.Subject
             "EVENT_SEARCH_BACK"   = var.EventSearchBack
