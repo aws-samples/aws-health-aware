@@ -15,9 +15,10 @@ Metadata:
           - S3Key
       - Label:
           default: >-
-            Communication Channels - Slack/Microsoft Teams/Amazon Chime And/or
+            Communication Channels - Google Space/Slack/Microsoft Teams/Amazon Chime And/or
             EventBridge
         Parameters:
+          - GoogleSpaceWebhookURL
           - SlackWebhookURL
           - MicrosoftTeamsWebhookURL
           - AmazonChimeWebhookURL
@@ -47,6 +48,8 @@ Metadata:
         default: Name of S3 Bucket
       S3Key:
         default: Name of .zip file in S3 Bucket
+      GoogleSpaceWebhookURL:
+        default: Google Space Webhook URL
       SlackWebhookURL:
         default: Slack Webhook URL
       MicrosoftTeamsWebhookURL:
@@ -68,16 +71,18 @@ Metadata:
       AccountIDs:
         default: Exclude any account numbers?        
 Conditions:
+  UsingGoogle: !Not [!Equals [!Ref GoogleSpaceWebhookURL, None]]
   UsingSlack: !Not [!Equals [!Ref SlackWebhookURL, None]]
   UsingTeams: !Not [!Equals [!Ref MicrosoftTeamsWebhookURL, None]]
   UsingChime: !Not [!Equals [!Ref AmazonChimeWebhookURL, None]]
   UsingEventBridge: !Not [!Equals [!Ref EventBusName, None]]
-  UsingSecrets: !Or [!Condition UsingSlack, !Condition UsingTeams, !Condition UsingChime, !Condition UsingEventBridge, !Condition UsingCrossAccountRole]
+  UsingSecrets: !Or [!Condition UsingGoogle, !Condition UsingSlack, !Condition UsingTeams, !Condition UsingChime, !Condition UsingEventBridge, !Condition UsingCrossAccountRole]
   UsingCrossAccountRole: !Not [!Equals [!Ref ManagementAccountRoleArn, None]]
   NotUsingMultiRegion: !Equals [!Ref SecondaryRegion, 'No']
   UsingMultiRegion: !Not [!Equals [!Ref SecondaryRegion, 'No']]
   TestCondition: !Equals ['true', 'false']
   UsingMultiRegionTeams: !And [!Condition UsingTeams, !Condition UsingMultiRegion]
+  UsingMultiRegionGoogle: !And [!Condition UsingGoogle, !Condition UsingMultiRegion]
   UsingMultiRegionSlack: !And [!Condition UsingSlack, !Condition UsingMultiRegion]
   UsingMultiRegionEventBridge: !And [!Condition UsingEventBridge, !Condition UsingMultiRegion]
   UsingMultiRegionChime: !And [!Condition UsingChime, !Condition UsingMultiRegion]
@@ -148,6 +153,11 @@ Parameters:
       you wish to send the alerts to the AWS EventBridge. Note: By ingesting
       these alerts to AWS EventBridge, you can integrate with 35 SaaS vendors
       such as DataDog/NewRelic/PagerDuty. If you don't prefer to use EventBridge, leave the default (None).
+    Type: String
+    Default: None
+  GoogleSpaceWebhookURL:
+    Description: >-
+      Enter the Google Space Webhook URL. If you don't prefer to use Google Space Chat, leave the default (None).
     Type: String
     Default: None
   SlackWebhookURL:
@@ -452,6 +462,7 @@ Resources:
                    - 'secretsmanager:GetSecretValue'
                   Resource: 
                    - !If [UsingTeams, !Sub '${MicrosoftChannelSecret}', !Ref AWS::NoValue]
+                   - !If [UsingGoogle, !Sub '${GoogleChannelSecret}', !Ref AWS::NoValue]
                    - !If [UsingSlack, !Sub '${SlackChannelSecret}', !Ref AWS::NoValue]
                    - !If [UsingEventBridge, !Sub '${EventBusNameSecret}', !Ref AWS::NoValue]
                    - !If [UsingChime, !Sub '${ChimeChannelSecret}', !Ref AWS::NoValue]
@@ -461,6 +472,12 @@ Resources:
                      - !Sub 
                        - 'arn:aws:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}' 
                        - { SecretNameWithSha: !Select [1, !Split [':secret:', !Sub '${MicrosoftChannelSecret}' ]]}
+                     - !Ref AWS::NoValue
+                   - !If
+                     - UsingMultiRegionGoogle
+                     - !Sub 
+                       - 'arn:aws:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}' 
+                       - { SecretNameWithSha: !Select [1, !Split [':secret:', !Sub '${GoogleChannelSecret}' ]]}
                      - !Ref AWS::NoValue
                    - !If
                      - UsingMultiRegionSlack
@@ -576,6 +593,22 @@ Resources:
       Tags:
         - Key: HealthCheckMicrosoft
           Value: ChannelID
+  GoogleChannelSecret:
+    Type: 'AWS::SecretsManager::Secret'
+    Condition: UsingGoogle    
+    Properties:
+      Name: GoogleChannelID
+      Description: Google Space Channel ID Secret
+      ReplicaRegions:
+        !If 
+        - UsingMultiRegion
+        - [{ Region: !Sub '${SecondaryRegion}' }]
+        - !Ref "AWS::NoValue"
+      SecretString:
+        Ref: GoogleSpaceWebhookURL
+      Tags:
+        - Key: HealthCheckGoogle
+          Value: ChannelID
   SlackChannelSecret:
     Type: 'AWS::SecretsManager::Secret'
     Condition: UsingSlack   
@@ -657,6 +690,7 @@ Resources:
       Runtime: python3.11
       Environment:
         Variables:
+          Google: !If [UsingGoogle, "True", !Ref 'AWS::NoValue']
           Slack: !If [UsingSlack, "True", !Ref 'AWS::NoValue']
           Teams: !If [UsingTeams, "True", !Ref 'AWS::NoValue']
           Chime: !If [UsingChime, "True", !Ref 'AWS::NoValue']

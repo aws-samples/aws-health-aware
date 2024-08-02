@@ -8,6 +8,151 @@ import sys
 import time
 
 
+def get_message_for_google_space(event_details, event_type, affected_accounts, affected_entities):
+    message = ""
+    if len(affected_entities) >= 1:
+        affected_entities = "\n".join(affected_entities)
+        if affected_entities == "UNKNOWN":
+            affected_entities = "All resources\nin region"
+    else:
+        affected_entities = "All resources\nin region"
+    if len(affected_accounts) >= 1:
+        affected_accounts = "\n".join(affected_accounts)
+    else:
+        affected_accounts = "All accounts\nin region"
+    summary = ""
+    if event_type == "create":
+        title = "&#x1F6A8; [NEW] AWS Health reported an issue with the " + event_details['successfulSet'][0]['event'][
+            'service'].upper() + " service in the " + event_details['successfulSet'][0]['event'][
+                    'region'].upper() + " region."
+        message = {
+            "cards": [
+                {
+                    "header": {
+                        "title": "AWS Health",
+                        "subtitle": title,
+                        "imageUrl": "https://i.imgur.com/tctwBdE.jpg"
+                    },
+                    "sections": [
+                        {
+                            "widgets": [
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Account(s):</b> {affected_accounts}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Resource(s):</b> {affected_entities}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Service:</b> {event_details['successfulSet'][0]['event']['service']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Region:</b> {event_details['successfulSet'][0]['event']['region']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Start Time (UTC):</b> {cleanup_time(event_details['successfulSet'][0]['event']['startTime'])}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Status:</b> {event_details['successfulSet'][0]['event']['statusCode']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Event ARN:</b> {event_details['successfulSet'][0]['event']['arn']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Updates:</b> {get_last_aws_update(event_details)}"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+    elif event_type == "resolve":
+        title = "&#x2705; [RESOLVED] The AWS Health issue with the " + event_details['successfulSet'][0]['event'][
+            'service'].upper() + " service in the " + event_details['successfulSet'][0]['event'][
+                    'region'].upper() + " region is now resolved."
+        message = {
+            "cards": [
+                {
+                    "header": {
+                        "title": "AWS Health",
+                        "subtitle": title,
+                        "imageUrl": "https://i.imgur.com/tctwBdE.jpg"
+                    },
+                    "sections": [
+                        {
+                            "widgets": [
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Account(s):</b> {affected_accounts}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Resource(s):</b> {affected_entities}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Service:</b> {event_details['successfulSet'][0]['event']['service']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Region:</b> {event_details['successfulSet'][0]['event']['region']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Start Time (UTC):</b> {cleanup_time(event_details['successfulSet'][0]['event']['startTime'])}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>End Time (UTC):</b> {cleanup_time(event_details['successfulSet'][0]['event']['endTime'])}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Status:</b> {event_details['successfulSet'][0]['event']['statusCode']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Event ARN:</b> {event_details['successfulSet'][0]['event']['arn']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Updates:</b> {get_last_aws_update(event_details)}"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    print("Message sent to Google Space: ", message)
+    return message
+
+
 def get_message_for_slack(event_details, event_type, affected_accounts, affected_entities, slack_webhook):
     message = ""
     summary = ""
@@ -138,6 +283,149 @@ def get_detail_for_eventbridge(event_details, affected_entities):
     print("PHD/SHD Message generated for EventBridge with estimated size ", str(sys.getsizeof(json_message) / 1024), "KB: ", message)
 
     return message
+
+
+def get_org_message_for_google_space(event_details, event_type, affected_org_accounts, affected_org_entities):
+    message = ""
+    if len(affected_org_entities) >= 1:
+        affected_org_entities = "\n".join(affected_org_entities)
+    else:
+        affected_org_entities = "All resources in region"
+    if len(affected_org_accounts) >= 1:
+        affected_org_accounts = "\n".join(affected_org_accounts)
+    else:
+        affected_org_accounts = "All accounts in region"
+    if event_type == "create":
+        title = "&#x1F6A8; [NEW] AWS Health reported an issue with the " + event_details['successfulSet'][0]['event'][
+            'service'].upper() + " service in the " + event_details['successfulSet'][0]['event'][
+                    'region'].upper() + " region."
+        message = {
+            "cards": [
+                {
+                    "header": {
+                        "title": "AWS Health",
+                        "subtitle": title,
+                        "imageUrl": "https://i.imgur.com/tctwBdE.jpg"
+                    },
+                    "sections": [
+                        {
+                            "widgets": [
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Account(s):</b> {affected_org_accounts}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Resource(s):</b> {affected_org_entities}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Service:</b> {event_details['successfulSet'][0]['event']['service']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Region:</b> {event_details['successfulSet'][0]['event']['region']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Start Time (UTC):</b> {cleanup_time(event_details['successfulSet'][0]['event']['startTime'])}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Status:</b> {event_details['successfulSet'][0]['event']['statusCode']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Event ARN:</b> {event_details['successfulSet'][0]['event']['arn']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Updates:</b> {get_last_aws_update(event_details)}"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+    elif event_type == "resolve":
+        title = "&#x2705; [RESOLVED] The AWS Health issue with the " + event_details['successfulSet'][0]['event'][
+            'service'].upper() + " service in the " + event_details['successfulSet'][0]['event'][
+                    'region'].upper() + " region is now resolved."
+        message = {
+            "cards": [
+                {
+                    "header": {
+                        "title": "AWS Health",
+                        "subtitle": title,
+                        "imageUrl": "https://i.imgur.com/tctwBdE.jpg"
+                    },
+                    "sections": [
+                        {
+                            "widgets": [
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Account(s):</b> {affected_org_accounts}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Resource(s):</b> {affected_org_entities}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Service:</b> {event_details['successfulSet'][0]['event']['service']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Region:</b> {event_details['successfulSet'][0]['event']['region']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Start Time (UTC):</b> {cleanup_time(event_details['successfulSet'][0]['event']['startTime'])}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>End Time (UTC):</b> {cleanup_time(event_details['successfulSet'][0]['event']['endTime'])}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Status:</b> {event_details['successfulSet'][0]['event']['statusCode']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Event ARN:</b> {event_details['successfulSet'][0]['event']['arn']}"
+                                    }
+                                },
+                                {
+                                    "textParagraph": {
+                                        "text": f"<b>Updates:</b> {get_last_aws_update(event_details)}"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    return message
+    print("Message sent to Google Space: ", message)
+
 
 def get_org_message_for_slack(event_details, event_type, affected_org_accounts, affected_org_entities, slack_webhook):
     message = ""

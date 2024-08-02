@@ -23,6 +23,8 @@ from messagegenerator import (
     get_message_for_email,
     get_org_message_for_email,
     get_detail_for_eventbridge,
+    get_message_for_google_space,
+    get_org_message_for_google_space,
 )
 
 print("boto3 version: ", boto3.__version__)
@@ -59,6 +61,7 @@ def get_account_name(account_id):
 
 
 def send_alert(event_details, affected_accounts, affected_entities, event_type):
+    google_space_url = get_secrets()["google"]
     slack_url = get_secrets()["slack"]
     teams_url = get_secrets()["teams"]
     chime_url = get_secrets()["chime"]
@@ -82,6 +85,16 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
             print(
                 "Got an error while sending message to EventBridge: ", e.code, e.reason
             )
+        except URLError as e:
+            print("Server connection failed: ", e.reason)
+            pass
+    if "chat.googleapis.com" in google_space_url:
+        try:
+            print("Sending the alert to Google Space")
+            send_to_google_space(get_message_for_google_space(event_details, event_type, affected_accounts, affected_entities),
+                          google_space_url)
+        except HTTPError as e:
+            print("Got an error while sending message to Google Space: ", e.code, e.reason)
         except URLError as e:
             print("Server connection failed: ", e.reason)
             pass
@@ -164,6 +177,7 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
 def send_org_alert(
     event_details, affected_org_accounts, affected_org_entities, event_type
 ):
+    google_url = get_secrets()["google"]
     slack_url = get_secrets()["slack"]
     teams_url = get_secrets()["teams"]
     chime_url = get_secrets()["chime"]
@@ -187,6 +201,20 @@ def send_org_alert(
             print(
                 "Got an error while sending message to EventBridge: ", e.code, e.reason
             )
+        except URLError as e:
+            print("Server connection failed: ", e.reason)
+            pass
+    if "chat.googleapis.com" in google_url:
+        try:
+            print("Sending the alert to Google Space")
+            send_to_google_space(
+                get_org_message_for_google_space(
+                    event_details, event_type, affected_org_accounts, resources
+                ),
+                google_url,
+            )
+        except HTTPError as e:
+            print("Got an error while sending message to Google Space: ", e.code, e.reason)
         except URLError as e:
             print("Server connection failed: ", e.reason)
             pass
@@ -264,6 +292,19 @@ def send_org_alert(
         except URLError as e:
             print("Server connection failed: ", e.reason)
             pass
+
+
+def send_to_google_space(message, webhookurl):
+    google_space_message = message
+    req = Request(webhookurl, data=json.dumps(google_space_message).encode("utf-8"),
+                  headers={"Content-Type": "application/json; charset=UTF-8"})
+    try:
+        response = urlopen(req)
+        response.read()
+    except HTTPError as e:
+        print("Request failed : ", e.code, e.reason)
+    except URLError as e:
+        print("Server connection failed: ", e.reason, e.reason)
 
 
 def send_to_slack(message, webhookurl):
@@ -690,6 +731,7 @@ def update_ddb(
 
 def get_secrets():
     secret_teams_name = "MicrosoftChannelID"
+    secret_google_space_name = "GoogleChannelID"
     secret_slack_name = "SlackChannelID"
     secret_chime_name = "ChimeChannelID"
     region_name = os.environ["AWS_REGION"]
@@ -703,6 +745,9 @@ def get_secrets():
     # Iteration through the configured AWS Secrets
     secrets["teams"] = (
         get_secret(secret_teams_name, client) if "Teams" in os.environ else "None"
+    )
+    secrets["google"] = (
+        get_secret(secret_google_space_name, client) if "Google" in os.environ else "None"
     )
     secrets["slack"] = (
         get_secret(secret_slack_name, client) if "Slack" in os.environ else "None"
