@@ -155,18 +155,21 @@ Parameters:
       Enter the Slack Webhook URL. If you don't prefer to use Slack, leave the default (None).
     Type: String
     Default: None
+    NoEcho: true
   MicrosoftTeamsWebhookURL:
     Description: >-
       Enter Microsoft Teams Webhook URL. If you don't prefer to use MS Teams,
       leave the default (None).   
     Type: String
     Default: None
+    NoEcho: true
   AmazonChimeWebhookURL:
     Description: >-
       Enter the Chime Webhook URL, If you don't prefer to use Amazon Chime,
       leave the default (None).   
     Type: String
     Default: None
+    NoEcho: true
   Regions:
     Description: >-
       By default, AHA reports events affecting all AWS regions. 
