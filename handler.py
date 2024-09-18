@@ -106,8 +106,8 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
                 except URLError as e:
                     print("Server connection failed: ", e.reason)
                     pass
-            else:
-                print("Unsupported format in Slack Webhook")
+        else:
+            print("Unsupported format in Slack Webhook")
 
     if "office.com/webhook" in teams_url:
         try:
