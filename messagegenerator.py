@@ -11,7 +11,7 @@ import time
 def get_message_for_slack(event_details, event_type, affected_accounts, affected_entities, slack_webhook):
     message = ""
     summary = ""
-    if slack_webhook == "webhook":
+    if slack_webhook == "services": #Handle "Incoming Webhook" webhooks
         if len(affected_entities) >= 1:
             affected_entities = "\n".join(affected_entities)
             if affected_entities == "UNKNOWN":
@@ -70,7 +70,7 @@ def get_message_for_slack(event_details, event_type, affected_accounts, affected
                     }
                 ]
             }
-    else:
+    else: #Handle 'workflows' or 'triggers' webhooks
         if len(affected_entities) >= 1:
             affected_entities = "\n".join(affected_entities)
             if affected_entities == "UNKNOWN":
