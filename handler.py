@@ -89,6 +89,7 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
     if slack_url is not "None":
         for slack_webhook_type in ["services", "triggers", "workflows"]:
             if ("hooks.slack.com/" + slack_webhook_type) in slack_url:
+                print("Sending the alert to Slack Webhook Channel")
                 try:
                     send_to_slack(
                         get_message_for_slack(
