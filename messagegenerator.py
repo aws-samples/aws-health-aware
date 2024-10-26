@@ -1,11 +1,6 @@
 import json
-import boto3
-from datetime import datetime, timedelta
-from botocore.exceptions import ClientError
-import os
-import re
+from datetime import datetime
 import sys
-import time
 import logging
 
 logger = logging.getLogger()

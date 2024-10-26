@@ -3,18 +3,12 @@ import logging
 
 import boto3
 import os
-import re
-import time
-import decimal
 import socket
-import configparser
 from dateutil import parser
 from datetime import datetime, timedelta
-from urllib.parse import urlencode
 from urllib.request import Request, urlopen, URLError, HTTPError
 from botocore.config import Config
 from botocore.exceptions import ClientError
-from boto3.dynamodb.conditions import Key, Attr
 from messagegenerator import (
     get_message_for_slack,
     get_org_message_for_slack,
