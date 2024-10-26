@@ -25,6 +25,16 @@ from messagegenerator import (
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO").upper())
 
+class CachedSecrets:
+    def __init__(self, client):
+        self.client = client
+
+    @lru_cache
+    def get_secret_value(self, *args, **kwargs):
+        logger.debug(f"Getting secret {kwargs}")
+        return self.client.get_secret_value(*args, **kwargs)
+
+
 class AWSApi:
     @lru_cache
     def client(self, *args, **kwargs):
@@ -39,6 +49,12 @@ class AWSApi:
     def cache_clear(self):
         self.client.cache_clear()
         self.resource.cache_clear()
+
+    @lru_cache
+    def secretsmanager(self, **kwargs):
+        client = boto3.client("secretsmanager", **kwargs)
+        return CachedSecrets(client)
+
 
 print("boto3 version: ", boto3.__version__)
 
@@ -715,7 +731,7 @@ def get_secrets():
     secrets = {}
 
     # create a Secrets Manager client
-    client = aws_api.client("secretsmanager", region_name=region_name)
+    client = aws_api.secretsmanager(region_name=region_name)
     # Iteration through the configured AWS Secrets
     secrets["teams"] = (
         get_secret(secret_teams_name, client) if "Teams" in os.environ else "None"
