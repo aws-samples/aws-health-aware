@@ -290,7 +290,7 @@ def get_message_for_chime(event_details, event_type, affected_accounts, affected
           "**Event ARN**: " + event_details['successfulSet'][0]['event']['arn'] + "\n"             
           "**Updates:**" + "\n" + get_last_aws_update(event_details)
         )
-    json.dumps(message)
+    message = truncate_message_if_needed(message, 4096)
     print("Message sent to Chime: ", message)    
     return message
 
@@ -334,6 +334,7 @@ def get_org_message_for_chime(event_details, event_type, affected_org_accounts, 
           "**Event ARN**: " + event_details['successfulSet'][0]['event']['arn'] + "\n"             
           "**Updates:**" + "\n" + get_last_aws_update(event_details)
         )
+    message = truncate_message_if_needed(message, 4096)
     print("Message sent to Chime: ", message)
     return message  
 
@@ -632,3 +633,21 @@ def format_date(event_time):
     """
     event_time = datetime.strptime(event_time[:16], '%Y-%m-%d %H:%M')
     return event_time.strftime('%B %d, %Y at %I:%M %p')
+
+
+def truncate_message_if_needed(message, max_length):
+    """
+    Truncates the message if it exceeds the specified maximum length.
+
+    :param message: Message you want to truncate.
+    :type message: str
+    :param max_length: Length at which to truncate the message.
+    :type max_length: int
+    :return: Possibly truncated message.
+    :rtype: str
+    """
+    message_length = len(message)
+    if message_length > max_length:
+        print(f"Message length of {message_length} is too long, truncating to {max_length}.")
+        message = message[:(max_length - 3)] + "..."
+    return message
