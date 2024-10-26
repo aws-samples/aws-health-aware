@@ -1,5 +1,6 @@
 import json
 import logging
+from functools import lru_cache
 
 import boto3
 import os
@@ -24,6 +25,21 @@ from messagegenerator import (
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO").upper())
 
+class AWSApi:
+    @lru_cache
+    def client(self, *args, **kwargs):
+        logger.debug(f"Returning new boto3 client for: {args}")
+        return boto3.client(*args, **kwargs)
+
+    @lru_cache
+    def resource(self, resource_name):
+        logger.debug(f"Returning new boto3 resource for: {resource_name}")
+        return boto3.resource(resource_name)
+
+    def cache_clear(self):
+        self.client.cache_clear()
+        self.resource.cache_clear()
+
 print("boto3 version: ", boto3.__version__)
 
 # query active health API endpoint
@@ -42,6 +58,8 @@ config = Config(
         # backoff/retry values than than the boto defaults
     ),
 )
+
+aws_api = AWSApi()
 
 
 # TODO decide if account_name should be blank on error
@@ -322,7 +340,7 @@ def send_email(event_details, eventType, affected_accounts, affected_entities):
     BODY_HTML = get_message_for_email(
         event_details, eventType, affected_accounts, affected_entities
     )
-    client = boto3.client("ses", region_name=AWS_REGION)
+    client = aws_api.client("ses", AWS_REGION)
     response = client.send_email(
         Source=SENDER,
         Destination={"ToAddresses": RECIPIENT},
@@ -349,7 +367,7 @@ def send_org_email(
     BODY_HTML = get_org_message_for_email(
         event_details, eventType, affected_org_accounts, affected_org_entities
     )
-    client = boto3.client("ses", region_name=AWS_REGION)
+    client = aws_api.client("ses", AWS_REGION)
     response = client.send_email(
         Source=SENDER,
         Destination={"ToAddresses": RECIPIENT},
@@ -468,7 +486,7 @@ def update_org_ddb(
     affected_org_entities,
 ):
     # open dynamoDB
-    dynamodb = boto3.resource("dynamodb")
+    dynamodb = aws_api.resource("dynamodb")
     ddb_table = os.environ["DYNAMODB_TABLE"]
     aha_ddb_table = dynamodb.Table(ddb_table)
     event_latestDescription = event_details["successfulSet"][0]["eventDescription"][
@@ -583,7 +601,7 @@ def update_ddb(
     affected_entities,
 ):
     # open dynamoDB
-    dynamodb = boto3.resource("dynamodb")
+    dynamodb = aws_api.resource("dynamodb")
     ddb_table = os.environ["DYNAMODB_TABLE"]
     aha_ddb_table = dynamodb.Table(ddb_table)
     event_latestDescription = event_details["successfulSet"][0]["eventDescription"][
@@ -697,8 +715,7 @@ def get_secrets():
     secrets = {}
 
     # create a Secrets Manager client
-    session = boto3.session.Session()
-    client = session.client(service_name="secretsmanager", region_name=region_name)
+    client = aws_api.client("secretsmanager", region_name=region_name)
     # Iteration through the configured AWS Secrets
     secrets["teams"] = (
         get_secret(secret_teams_name, client) if "Teams" in os.environ else "None"
@@ -964,7 +981,7 @@ def send_to_eventbridge(message, event_type, resources, event_bus):
     print(
         "Sending response to Eventbridge - event_type, event_bus", event_type, event_bus
     )
-    client = boto3.client("events")
+    client = aws_api.client("events")
 
     entries = eventbridge_generate_entries(message, resources, event_bus)
 
@@ -979,7 +996,7 @@ def getAccountIDs():
     key_file_name = os.environ["ACCOUNT_IDS"]
     print("Key filename is - ", key_file_name)
     if os.path.splitext(os.path.basename(key_file_name))[1] == ".csv":
-        s3 = boto3.client("s3")
+        s3 = aws_api.client("s3")
         data = s3.get_object(Bucket=os.environ["S3_BUCKET"], Key=key_file_name)
         account_ids = [account.decode("utf-8") for account in data["Body"].iter_lines()]
     else:
@@ -997,7 +1014,7 @@ def get_sts_token(service):
         SECRET_KEY = []
         SESSION_TOKEN = []
 
-        sts_connection = boto3.client("sts")
+        sts_connection = aws_api.client("sts")
 
         ct = datetime.now()
         role_session_name = "cross_acct_aha_session"
@@ -1013,7 +1030,7 @@ def get_sts_token(service):
         SESSION_TOKEN = acct_b["Credentials"]["SessionToken"]
 
         # create service client using the assumed role credentials, e.g. S3
-        boto3_client = boto3.client(
+        boto3_client = aws_api.client(
             service,
             config=config,
             aws_access_key_id=ACCESS_KEY,
@@ -1022,13 +1039,14 @@ def get_sts_token(service):
         )
         print("Running in member account deployment mode")
     else:
-        boto3_client = boto3.client(service, config=config)
+        boto3_client = aws_api.client(service, config=config)
         print("Running in management account deployment mode")
 
     return boto3_client
 
 
 def main(event, context):
+    aws_api.cache_clear()
     print("THANK YOU FOR CHOOSING AWS HEALTH AWARE!")
     health_client = get_sts_token("health")
     org_status = os.environ["ORG_STATUS"]
