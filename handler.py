@@ -1,4 +1,6 @@
 import json
+import logging
+
 import boto3
 import os
 import re
@@ -24,6 +26,9 @@ from messagegenerator import (
     get_org_message_for_email,
     get_detail_for_eventbridge,
 )
+
+logger = logging.getLogger()
+logger.setLevel(os.environ.get("LOG_LEVEL", "INFO").upper())
 
 print("boto3 version: ", boto3.__version__)
 
