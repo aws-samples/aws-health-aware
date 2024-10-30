@@ -1,11 +1,9 @@
 import json
-import boto3
-from datetime import datetime, timedelta
-from botocore.exceptions import ClientError
-import os
-import re
+from datetime import datetime
 import sys
-import time
+import logging
+
+logger = logging.getLogger()
 
 
 def get_message_for_slack(event_details, event_type, affected_accounts, affected_entities, slack_webhook):
@@ -62,7 +60,7 @@ def get_message_for_slack(event_details, event_type, affected_accounts, affected
                                 { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
                                 { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
                                 { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
-                                { "title": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['endTime']), "short": True },
+                                { "title": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event'].get('endTime')), "short": True },
                                 { "title": "Status", "value": event_details['successfulSet'][0]['event']['statusCode'], "short": True },
                                 { "title": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn'], "short": False },                                
                                 { "title": "Updates", "value": get_last_aws_update(event_details), "short": False }
@@ -191,7 +189,7 @@ def get_org_message_for_slack(event_details, event_type, affected_org_accounts, 
                                 { "title": "Service", "value": event_details['successfulSet'][0]['event']['service'], "short": True },
                                 { "title": "Region", "value": event_details['successfulSet'][0]['event']['region'], "short": True },
                                 { "title": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime']), "short": True },
-                                { "title": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['endTime']), "short": True },
+                                { "title": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event'].get('endTime')), "short": True },
                                 { "title": "Status", "value": event_details['successfulSet'][0]['event']['statusCode'], "short": True },
                                 { "title": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn'], "short": False },                                
                                 { "title": "Updates", "value": get_last_aws_update(event_details), "short": False }
@@ -282,12 +280,12 @@ def get_message_for_chime(event_details, event_type, affected_accounts, affected
           "**Service**: " + event_details['successfulSet'][0]['event']['service'] + "\n"
           "**Region**: " + event_details['successfulSet'][0]['event']['region'] + "\n" 
           "**Start Time (UTC)**: " + cleanup_time(event_details['successfulSet'][0]['event']['startTime']) + "\n"
-          "**End Time (UTC)**: " + cleanup_time(event_details['successfulSet'][0]['event']['endTime']) + "\n"
+          "**End Time (UTC)**: " + cleanup_time(event_details['successfulSet'][0]['event'].get('endTime')) + "\n"
           "**Status**: " + event_details['successfulSet'][0]['event']['statusCode'] + "\n"
           "**Event ARN**: " + event_details['successfulSet'][0]['event']['arn'] + "\n"             
           "**Updates:**" + "\n" + get_last_aws_update(event_details)
         )
-    json.dumps(message)
+    message = truncate_message_if_needed(message, 4096)
     print("Message sent to Chime: ", message)    
     return message
 
@@ -326,11 +324,12 @@ def get_org_message_for_chime(event_details, event_type, affected_org_accounts, 
           "**Service**: " + event_details['successfulSet'][0]['event']['service'] + "\n"
           "**Region**: " + event_details['successfulSet'][0]['event']['region'] + "\n" 
           "**Start Time (UTC)**: " + cleanup_time(event_details['successfulSet'][0]['event']['startTime']) + "\n"
-          "**End Time (UTC)**: " + cleanup_time(event_details['successfulSet'][0]['event']['endTime']) + "\n"
+          "**End Time (UTC)**: " + cleanup_time(event_details['successfulSet'][0]['event'].get('endTime')) + "\n"
           "**Status**: " + event_details['successfulSet'][0]['event']['statusCode'] + "\n"
           "**Event ARN**: " + event_details['successfulSet'][0]['event']['arn'] + "\n"             
           "**Updates:**" + "\n" + get_last_aws_update(event_details)
         )
+    message = truncate_message_if_needed(message, 4096)
     print("Message sent to Chime: ", message)
     return message  
 
@@ -395,7 +394,7 @@ def get_message_for_teams(event_details, event_type, affected_accounts, affected
                         {"name": "Service", "value": event_details['successfulSet'][0]['event']['service']},
                         {"name": "Region", "value": event_details['successfulSet'][0]['event']['region']},
                         {"name": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime'])},
-                        {"name": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['endTime'])},
+                        {"name": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event'].get('endTime'))},
                         {"name": "Status", "value": event_details['successfulSet'][0]['event']['statusCode']},
                         {"name": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn']},
                         {"name": "Updates", "value": get_last_aws_update(event_details)}
@@ -464,7 +463,7 @@ def get_org_message_for_teams(event_details, event_type, affected_org_accounts, 
                         {"name": "Service", "value": event_details['successfulSet'][0]['event']['service']},
                         {"name": "Region", "value": event_details['successfulSet'][0]['event']['region']},
                         {"name": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime'])},
-                        {"name": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['endTime'])},
+                        {"name": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event'].get('endTime'))},
                         {"name": "Status", "value": event_details['successfulSet'][0]['event']['statusCode']},
                         {"name": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn']},
                         {"name": "Updates", "value": event_details['successfulSet'][0]['eventDescription']['latestDescription']}
@@ -520,7 +519,7 @@ def get_message_for_email(event_details, event_type, affected_accounts, affected
                 <b>Service:</b> {event_details['successfulSet'][0]['event']['service']}<br>
                 <b>Region:</b> {event_details['successfulSet'][0]['event']['region']}<br>
                 <b>Start Time (UTC):</b> {cleanup_time(event_details['successfulSet'][0]['event']['startTime'])}<br>
-                <b>End Time (UTC):</b> {cleanup_time(event_details['successfulSet'][0]['event']['endTime'])}<br>
+                <b>End Time (UTC):</b> {cleanup_time(event_details['successfulSet'][0]['event'].get('endTime'))}<br>
                 <b>Status:</b> {event_details['successfulSet'][0]['event']['statusCode']}<br>                
                 <b>Event ARN:</b> {event_details['successfulSet'][0]['event']['arn']}<br>                
                 <b>Updates:</b> {event_details['successfulSet'][0]['eventDescription']['latestDescription']}<br><br>  
@@ -576,7 +575,7 @@ def get_org_message_for_email(event_details, event_type, affected_org_accounts, 
                 <b>Service:</b> {event_details['successfulSet'][0]['event']['service']}<br>
                 <b>Region:</b> {event_details['successfulSet'][0]['event']['region']}<br>
                 <b>Start Time (UTC):</b> {cleanup_time(event_details['successfulSet'][0]['event']['startTime'])}<br>
-                <b>End Time (UTC):</b> {cleanup_time(event_details['successfulSet'][0]['event']['endTime'])}<br>
+                <b>End Time (UTC):</b> {cleanup_time(event_details['successfulSet'][0]['event'].get('endTime'))}<br>
                 <b>Status:</b> {event_details['successfulSet'][0]['event']['statusCode']}<br>                
                 <b>Event ARN:</b> {event_details['successfulSet'][0]['event']['arn']}<br>
                 <b>Updates:</b> {event_details['successfulSet'][0]['eventDescription']['latestDescription']}<br><br>               
@@ -600,6 +599,9 @@ def cleanup_time(event_time):
     :return: A formatted string that includes the month, date, year and 12-hour time.
     :rtype: str
     """
+    if not event_time:
+        return "Unknown"
+
     event_time = datetime.strptime(event_time[:16], '%Y-%m-%d %H:%M')
     return event_time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -629,3 +631,21 @@ def format_date(event_time):
     """
     event_time = datetime.strptime(event_time[:16], '%Y-%m-%d %H:%M')
     return event_time.strftime('%B %d, %Y at %I:%M %p')
+
+
+def truncate_message_if_needed(message, max_length):
+    """
+    Truncates the message if it exceeds the specified maximum length.
+
+    :param message: Message you want to truncate.
+    :type message: str
+    :param max_length: Length at which to truncate the message.
+    :type max_length: int
+    :return: Possibly truncated message.
+    :rtype: str
+    """
+    message_length = len(message)
+    if message_length > max_length:
+        print(f"Message length of {message_length} is too long, truncating to {max_length}.")
+        message = message[:(max_length - 3)] + "..."
+    return message
