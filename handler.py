@@ -86,7 +86,7 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
             print("Server connection failed: ", e.reason)
             pass
     #Slack Notification Handling
-    if slack_url is not "None":
+    if slack_url != "None":
         for slack_webhook_type in ["services", "triggers", "workflows"]:
             if ("hooks.slack.com/" + slack_webhook_type) in slack_url:
                 print("Sending the alert to Slack Webhook Channel")
@@ -179,42 +179,31 @@ def send_org_alert(
         except URLError as e:
             print("Server connection failed: ", e.reason)
             pass
-    if "hooks.slack.com/services" in slack_url:
-        try:
-            print("Sending the alert to Slack Webhook Channel")
-            send_to_slack(
-                get_org_message_for_slack(
-                    event_details,
-                    event_type,
-                    affected_org_accounts,
-                    resources,
-                    slack_webhook="webhook",
-                ),
-                slack_url,
-            )
-        except HTTPError as e:
-            print("Got an error while sending message to Slack: ", e.code, e.reason)
-        except URLError as e:
-            print("Server connection failed: ", e.reason)
-            pass
-    if "hooks.slack.com/workflows" in slack_url:
-        try:
-            print("Sending the alert to Slack Workflow Channel")
-            send_to_slack(
-                get_org_message_for_slack(
-                    event_details,
-                    event_type,
-                    affected_org_accounts,
-                    resources,
-                    slack_webhook="workflow",
-                ),
-                slack_url,
-            )
-        except HTTPError as e:
-            print("Got an error while sending message to Slack: ", e.code, e.reason)
-        except URLError as e:
-            print("Server connection failed: ", e.reason)
-            pass
+    #Slack Notification Handling
+    if slack_url != "None":
+        for slack_webhook_type in ["services", "triggers", "workflows"]:
+            if ("hooks.slack.com/" + slack_webhook_type) in slack_url:
+                print("Sending the alert to Slack Webhook Channel")
+                try:
+                    send_to_slack(
+                        get_message_for_slack(
+                            event_details,
+                            event_type,
+                            affected_org_accounts,
+                            resources,
+                            slack_webhook_type,
+                        ),
+                        slack_url,
+                    )
+                    break
+                except HTTPError as e:
+                    print("Got an error while sending message to Slack: ", e.code, e.reason)
+                except URLError as e:
+                    print("Server connection failed: ", e.reason)
+                    pass
+        else:
+            print("Unsupported format in Slack Webhook")
+
     if "office.com/webhook" in teams_url:
         try:
             print("Sending the alert to Teams")
