@@ -29,20 +29,16 @@ provider "aws" {
 locals {
     source_files = ["${path.module}/../../handler.py", "${path.module}/../../messagegenerator.py"]
 }
-data "template_file" "t_file" {
-    count = "${length(local.source_files)}"
-    template = "${file(element(local.source_files, count.index))}"
-}
 data "archive_file" "lambda_zip" {
     type          = "zip"
     output_path   = "${path.module}/lambda_function.zip"
     source {
       filename = "${basename(local.source_files[0])}"
-      content  = "${data.template_file.t_file.0.rendered}"
+      content  = file("${local.source_files[0]}")
     }
     source {
       filename = "${basename(local.source_files[1])}"
-      content  = "${data.template_file.t_file.1.rendered}"
+      content  = file("${local.source_files[1]}")
   }
 }
 
@@ -673,6 +669,10 @@ resource "aws_lambda_function" "AHA-LambdaFunction-PrimaryRegion" {
 
     environment {
         variables = {
+            "Slack"               = var.SlackWebhookURL != "" ? "True" : null
+            "Team"                = var.MicrosoftTeamsWebhookURL != "" ? "True" : null
+            "Chime"               = var.AmazonChimeWebhookURL != "" ? "True" : null
+            "Eventbridge"         = var.EventBusName != "" ? "True" : null
             "DYNAMODB_TABLE"      = "${var.dynamodbtable}-${random_string.resource_code.result}"
             "EMAIL_SUBJECT"       = var.Subject
             "EVENT_SEARCH_BACK"   = var.EventSearchBack
@@ -681,7 +681,7 @@ resource "aws_lambda_function" "AHA-LambdaFunction-PrimaryRegion" {
             "ORG_STATUS"          = var.AWSOrganizationsEnabled
             "REGIONS"             = var.Regions
             "TO_EMAIL"            = var.ToEmail
-            "MANAGEMENT_ROLE_ARN" = var.ManagementAccountRoleArn
+            "MANAGEMENT_ROLE_ARN" = var.ManagementAccountRoleArn == "" ? "None" : var.ManagementAccountRoleArn
             "ACCOUNT_IDS"         = var.ExcludeAccountIDs
             "S3_BUCKET"           = join("",aws_s3_bucket.AHA-S3Bucket-PrimaryRegion[*].bucket)
         }
@@ -720,6 +720,10 @@ resource "aws_lambda_function" "AHA-LambdaFunction-SecondaryRegion" {
 
     environment {
         variables = {
+            "Slack"               = var.SlackWebhookURL != "" ? "True" : null
+            "Team"                = var.MicrosoftTeamsWebhookURL != "" ? "True" : null
+            "Chime"               = var.AmazonChimeWebhookURL != "" ? "True" : null
+            "Eventbridge"         = var.EventBusName != "" ? "True" : null
             "DYNAMODB_TABLE"      = "${var.dynamodbtable}-${random_string.resource_code.result}"
             "EMAIL_SUBJECT"       = var.Subject
             "EVENT_SEARCH_BACK"   = var.EventSearchBack
@@ -752,7 +756,7 @@ resource "aws_lambda_function" "AHA-LambdaFunction-SecondaryRegion" {
 resource "aws_cloudwatch_event_rule" "AHA-LambdaSchedule-PrimaryRegion" {
     description         = "Lambda trigger Event"
     event_bus_name      = "default"
-    is_enabled          = true
+    state               = "ENABLED"
     name                = "AHA-LambdaSchedule-${random_string.resource_code.result}"
     schedule_expression = "rate(1 minute)"
     tags             = {
@@ -760,11 +764,11 @@ resource "aws_cloudwatch_event_rule" "AHA-LambdaSchedule-PrimaryRegion" {
     }
 }
 resource "aws_cloudwatch_event_rule" "AHA-LambdaSchedule-SecondaryRegion" {
+    description         = "Lambda trigger Event"
     count               = "${var.aha_secondary_region == "" ? 0 : 1}"
     provider            = aws.secondary_region    
-    description         = "Lambda trigger Event"
     event_bus_name      = "default"
-    is_enabled          = true
+    state               = "ENABLED"
     name                = "AHA-LambdaSchedule-${random_string.resource_code.result}"
     schedule_expression = "rate(1 minute)"
     tags             = {
