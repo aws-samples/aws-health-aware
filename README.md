@@ -208,7 +208,7 @@ The 3 deployment methods for AHA are:
 
 ### Prerequisites
 
-1. [Enable Health Organizational View](https://docs.aws.amazon.com/health/latest/ug/enable-organizational-view-in-health-console.html) from the console, so that you can aggregate all Personal Health Dashboard (PHD) events for all accounts in your AWS Organization. 
+1. [Enable Health Organizational View](https://docs.aws.amazon.com/health/latest/ug/enable-organizational-view.html) from the console or CLI, so that you can aggregate Health events for all accounts in your AWS Organization. 
 2. Have at least 1 [endpoint](#configuring-an-endpoint) configured (you can have multiple)
 3. Have access to deploy Cloudformation Templates with the following resources: AWS IAM policies, Amazon DynamoDB Tables, AWS Lambda, Amazon EventBridge and AWS Secrets Manager in the **AWS Organizations Master Account**.
 4. If using Multi-Region, you must deploy the following 2 CloudFormation templates to allow the Stackset deployment to deploy resources **even if you have full administrator privileges, you still need to follow these steps**.
@@ -248,7 +248,7 @@ See: [Using AWS Health Delegated Administrator with AHA](#using-aws-health-deleg
 
 ### Prerequisites
 
-1. [Enable Health Organizational View](https://docs.aws.amazon.com/health/latest/ug/enable-organizational-view-in-health-console.html) from the console, so that you can aggregate all Personal Health Dashboard (PHD) events for all accounts in your AWS Organization. 
+1. [Enable Health Organizational View](https://docs.aws.amazon.com/health/latest/ug/enable-organizational-view.html) from the console or CLI, so that you can aggregate Health events for all accounts in your AWS Organization.
 2. Have at least 1 [endpoint](#configuring-an-endpoint) configured (you can have multiple)
 3. Have access to deploy Cloudformation Templates with the following resource: AWS IAM policies in the **AWS Organizations Master Account**.
 4. If using Multi-Region, you must deploy the following 2 CloudFormation templates in the **Member Account** to allow the Stackset deployment to deploy resources **even if you have full administrator privileges, you still need to follow these steps**.
@@ -340,7 +340,7 @@ $ terraform apply
 
 ## AHA with AWS Organizations on Management or Delegated Administrator Account using Terraform
 
-1. [Enable Health Organizational View](https://docs.aws.amazon.com/health/latest/ug/enable-organizational-view-in-health-console.html) from the console, so that you can aggregate all Personal Health Dashboard (PHD) events for all accounts in your AWS Organization. 
+1. [Enable Health Organizational View](https://docs.aws.amazon.com/health/latest/ug/enable-organizational-view.html) from the console or CLI, so that you can aggregate Health events for all accounts in your AWS Organization.
 2. Have at least 1 [endpoint](#configuring-an-endpoint) configured (you can have multiple)
 
 **NOTE: ** For Multi region deployment, DynamoDB table will be created with PAY_PER_REQUEST billing mode insted of PROVISIONED due to limitation with terraform.
@@ -377,7 +377,7 @@ $ terraform apply
 > Note: On 2023-07-27, AWS Health released the Delegated Admin feature which enables AHA deployments in member accounts without the extra steps below.
 See: [Using AWS Health Delegated Administrator with AHA](#using-aws-health-delegated-administrator-with-aha)
 
-1. [Enable Health Organizational View](https://docs.aws.amazon.com/health/latest/ug/enable-organizational-view-in-health-console.html) from the console, so that you can aggregate all Personal Health Dashboard (PHD) events for all accounts in your AWS Organization.
+1. [Enable Health Organizational View](https://docs.aws.amazon.com/health/latest/ug/enable-organizational-view.html) from the console or CLI, so that you can aggregate Health events for all accounts in your AWS Organization. 
 2. Have at least 1 [endpoint](#configuring-an-endpoint) configured (you can have multiple)
 
 **NOTE: ** For Multi region deployment, DynamoDB table will be created with PAY_PER_REQUEST billing mode insted of PROVISIONED due to limitation with terraform.
