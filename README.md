@@ -17,24 +17,25 @@
   - [Configuring an Email](#configuring-an-email)
   - [Creating a Amazon EventBridge Ingestion ARN](#creating-a-amazon-eventbridge-ingestion-arn)
 - [Deployment Options](#deployment-options)
+  - [Using AWS Health Delegated Administrator with AHA](#using-aws-health-delegated-administrator-with-aha)
   - [CloudFormation](#cloudformation)
-  - [AHA Without AWS Organizations using CloudFormation](#aha-without-aws-organizations-using-cloudformation)
-    - [Prerequisites](#prerequisites)
-    - [Deployment](#deployment)
-  - [AHA With AWS Organizations on Management Account using CloudFormation](#aha-with-aws-organizations-on-management-account-using-cloudformation)
-    - [Prerequisites](#prerequisites-1)
-    - [Deployment](#deployment-1)
-  - [AHA With AWS Organizations on Member Account using CloudFormation](#aha-with-aws-organizations-on-member-account-using-cloudformation)
-    - [Prerequisites](#prerequisites-2)
-    - [Deployment](#deployment-2)
+    - [AHA Without AWS Organizations using CloudFormation](#aha-without-aws-organizations-using-cloudformation)
+      - [Prerequisites](#prerequisites)
+      - [Deployment](#deployment)
+    - [AHA With AWS Organizations on Management Account using CloudFormation](#aha-with-aws-organizations-on-management-or-delegated-administrator-account-using-cloudformation)
+      - [Prerequisites](#prerequisites-1)
+      - [Deployment](#deployment-1)
+    - [AHA With AWS Organizations on Member Account using CloudFormation](#aha-with-aws-organizations-on-member-account-using-cloudformation)
+      - [Prerequisites](#prerequisites-2)
+      - [Deployment](#deployment-2)
   - [Terraform](#terraform)
-  - [AHA Without AWS Organizations using Terraform](#aha-without-aws-organizations-using-terraform)
-    - [Prerequisites](#prerequisites-3)
-    - [Deployment - Terraform](#deployment---terraform)
-  - [AHA WITH AWS Organizations on Management Account using Terraform](#aha-with-aws-organizations-on-management-account-using-terraform)
-    - [Deployment - Terraform](#deployment---terraform-1)
-  - [AHA WITH AWS Organizations on Member Account using Terraform](#aha-with-aws-organizations-on-member-account-using-terraform)
-    - [Deployment - Terraform](#deployment---terraform-2)
+    - [AHA Without AWS Organizations using Terraform](#aha-without-aws-organizations-using-terraform)
+      - [Prerequisites](#prerequisites-3)
+      - [Deployment - Terraform](#deployment---terraform)
+    - [AHA WITH AWS Organizations on Management Account using Terraform](#aha-with-aws-organizations-on-management-or-delegated-administrator-account-using-terraform)
+      - [Deployment - Terraform](#deployment---terraform-1)
+    - [AHA WITH AWS Organizations on Member Account using Terraform](#aha-with-aws-organizations-on-member-account-using-terraform)
+      - [Deployment - Terraform](#deployment---terraform-2)
 - [Updating using CloudFormation](#updating-using-cloudformation)
 - [Updating using Terraform](#updating-using-terraform)
 - [New Features](#new-features)
@@ -142,21 +143,21 @@ AHA can send to multiple endpoints (webhook URLs, Email or EventBridge). To use 
 4.	Give your Event bus a name and **click** *Create*.
 5.  For the deployment we will need the *Name* of the Event bus **(not the ARN, e.g. aha-eb01)**.
 
+# Deployment Options
+
 ## Using AWS Health Delegated Administrator with AHA
 
-On 2023-07-27, AWS Health released the Delegated Admin feature. Using this feature, you can deploy AHA in a Member Account without added permissions in the Org Management account.
+>NOTE: For users with company restrictions of use/deployment of resources in the organization management account.
+>
+>On 2023-07-27, AWS Health released the [Delegated Administrator feature](https://docs.aws.amazon.com/health/latest/ug/delegated-administrator-organizational-view.html). By enabling an account as a delegated administrator, you can use AHA in Organization Mode without the need to create and assume the management account IAM role. 
 
 To enable this feature:
-1. Know the AWS Account ID of the Member Account you want to enable as a delegated administrator for AWS Health (e.g. 123456789012)
+1. Know the AWS Account ID of your AWS account you want to enable as a delegated administrator for AWS Health (e.g. 123456789012)
 1. In the Org Management Account, run the command `aws organizations register-delegated-administrator --account-id ACCOUNT_ID --service-principal  health.amazonaws.com` replacing ACCOUNT_ID with the ID of your Member Account
-1. Deploy AHA in the Member Account using the steps for 
-  2.  [AHA for users who ARE using AWS Organizations (CloudFormation)](#aha-with-aws-organizations-on-management-account-using-cloudformation)
-  2.  [AHA for users who ARE using AWS Organizations (Terraform)](#aha-with-aws-organizations-using-terraform)
+1. Deploy AHA in your deletegated administrator account using the steps for:
 
-
-Read more: https://docs.aws.amazon.com/health/latest/ug/delegated-administrator-organizational-view.html
-
-# Deployment Options
+   1.  [AHA for users who ARE using AWS Organizations (CloudFormation)](#aha-with-aws-organizations-on-management-or-delegated-administrator-account-using-cloudformation)
+   1.  [AHA for users who ARE using AWS Organizations (Terraform)](#aha-with-aws-organizations-on-management-or-delegated-administrator-account-using-terraform)
 
 ## CloudFormation
 There are 3 available ways to deploy AHA, all are done via the same CloudFormation template to make deployment as easy as possible.
@@ -164,7 +165,7 @@ There are 3 available ways to deploy AHA, all are done via the same CloudFormati
 The 3 deployment methods for AHA are:
 
 1. [**AHA for users WITHOUT AWS Organizations**](#aha-without-aws-organizations-using-cloudformation): Users NOT using AWS Organizations.
-2. [**AHA for users WITH AWS Organizations (Management Account)**](#aha-with-aws-organizations-on-management-account-using-cloudformation): Users who ARE using AWS Organizations and deploying in the top-level management account.
+2. [**AHA for users WITH AWS Organizations (Management Account)**](#aha-with-aws-organizations-on-management-or-delegated-administrator-account-using-cloudformation): Users who ARE using AWS Organizations and deploying in the top-level management account.
 3. [**AHA for users WITH AWS Organizations (Member Account)**](#aha-with-aws-organizations-on-member-account-using-cloudformation): Users who ARE using AWS Organizations and deploying in a member account in the organization to assume a role in the top-level management account.
 
 ## AHA Without AWS Organizations using CloudFormation
@@ -188,7 +189,7 @@ The 3 deployment methods for AHA are:
 5. In the *CloudFormation* console **click** *Create stack > With new resources (standard)*.   
 6. Under *Template Source* **click** *Upload a template file* and **click** *Choose file*  and select `CFN_DEPLOY_AHA.yml` **Click** *Next*.   
  - In *Stack name* type a stack name (i.e. AHA-Deployment).
- - In *AWSOrganizationsEnabled* leave it set to default which is `No`. If you do have AWS Organizations enabled and you want to aggregate across all your accounts, you should be following the steps for [AHA for users who ARE using AWS Organizations (Management Account)](#aha-with-aws-organizations-on-management-account-using-cloudformation) or [AHA for users WITH AWS Organizations (Member Account)](#aha-with-aws-organizations-on-member-account-using-cloudformation)
+ - In *AWSOrganizationsEnabled* leave it set to default which is `No`. If you do have AWS Organizations enabled and you want to aggregate across all your accounts, you should be following the steps for [AHA for users who ARE using AWS Organizations (Management Account)](#aha-with-aws-organizations-on-management-or-delegated-administrator-account-using-cloudformation) or [AHA for users WITH AWS Organizations (Member Account)](#aha-with-aws-organizations-on-member-account-using-cloudformation)
  - In *AWSHealthEventType* select whether you want to receive *all* event types or *only* issues.   
  - In *S3Bucket* type ***just*** the bucket name of the S3 bucket used in step 3  (e.g. my-aha-bucket).    
  - In *S3Key* type ***just*** the name of the .zip file you created in Step 2 (e.g. aha-v1.8.zip).     
@@ -203,7 +204,7 @@ The 3 deployment methods for AHA are:
 9. Scroll to the bottom and **click** the *checkbox* and **click** *Create stack*.   
 10. Wait until *Status* changes to *CREATE_COMPLETE* (roughly 2-4 minutes or if deploying in a secondary region, it can take up to 30 minutes).   
 
-## AHA With AWS Organizations on Management Account using CloudFormation
+## AHA With AWS Organizations on Management or Delegated Administrator Account using CloudFormation
 
 ### Prerequisites
 
@@ -299,7 +300,7 @@ There are 3 available ways to deploy AHA, all are done via the same Terraform te
 The 3 deployment methods for AHA are:
 
 1. [**AHA for users NOT using AWS Organizations using Terraform**](#aha-without-aws-organizations-using-terraform): Users NOT using AWS Organizations.
-2. [**AHA for users WITH AWS Organizations using Terraform (Management Account)**](#aha-with-aws-organizations-on-management-account-using-terraform): Users who ARE using AWS Organizations and deploying in the top-level management account.
+2. [**AHA for users WITH AWS Organizations using Terraform (Management Account)**](#aha-with-aws-organizations-on-management-or-delegated-administrator-account-using-terraform): Users who ARE using AWS Organizations and deploying in the top-level management account.
 3. [**AHA for users WITH AWS Organizations using Terraform (Member Account)**](#aha-with-aws-organizations-on-member-account-using-terraform): Users who ARE using AWS Organizations and deploying in a member account in the organization to assume a role in the top-level management account.
 
 ## AHA Without AWS Organizations using Terraform
@@ -321,7 +322,7 @@ $ cd aws-health-aware/terraform/Terraform_DEPLOY_AHA
 2. Update parameters file **terraform.tfvars** as below
  - *aha_primary_region* - change to region where you want to deploy AHA solution
  - *aha_secondary_region* - Required if needed to deploy in AHA solution in multiple regions, change to another region (Secondary) where you want to deploy AHA solution, Otherwise leave to default empty value.
- - *AWSOrganizationsEnabled* - Leave it to default which is `No`. If you do have AWS Organizations enabled and you want to aggregate across all your accounts, you should be following the steps for [AHA for users who ARE using AWS Organizations (Management Account)](#aha-with-aws-organizations-on-management-account-using-terraform)] or [AHA for users WITH AWS Organizations (Member Account)](#aha-with-aws-organizations-on-member-account-using-terraform)
+ - *AWSOrganizationsEnabled* - Leave it to default which is `No`. If you do have AWS Organizations enabled and you want to aggregate across all your accounts, you should be following the steps for [AHA for users who ARE using AWS Organizations (Management Account)](#aha-with-aws-organizations-on-management-or-delegated-administrator-account-using-terraform)] or [AHA for users WITH AWS Organizations (Member Account)](#aha-with-aws-organizations-on-member-account-using-terraform)
  - *AWSHealthEventType* - select whether you want to receive *all* event types or *only* issues.
  - *Communications Channels* section - enter the URLs, Emails and/or ARN of the endpoints you configured previously.
  - *Email Setup* section - enter the From and To Email addresses as well as the Email subject. If you aren't configuring email, just leave it as is.
@@ -337,7 +338,7 @@ $ terraform plan
 $ terraform apply
 ```
 
-## AHA WITH AWS Organizations on Management Account using Terraform
+## AHA with AWS Organizations on Management or Delegated Administrator Account using Terraform
 
 1. [Enable Health Organizational View](https://docs.aws.amazon.com/health/latest/ug/enable-organizational-view-in-health-console.html) from the console, so that you can aggregate all Personal Health Dashboard (PHD) events for all accounts in your AWS Organization. 
 2. Have at least 1 [endpoint](#configuring-an-endpoint) configured (you can have multiple)
