@@ -462,6 +462,8 @@ We are happy to announce the launch of new enhancements to AHA. Please try them 
 * If for whatever reason you need to update the Webhook URL; just update the CloudFormation or terraform Template with the new Webhook URL.
 * If you are expecting an event and it did not show up it may be an oddly formed event. Take a look at *CloudWatch > Log groups* and search for the name of your Lambda function.  See what the error is and reach out to us [email](mailto:aha-builders@amazon.com) for help.
 * If for any errors related to duplicate secrets during deployment, try deleting manually and redeploy the solution. Example command to delete SlackChannelID secret in us-east-1 region.
-```
-$ aws secretsmanager delete-secret --secret-id SlackChannelID --force-delete-without-recovery --region us-east-1
-```
+    ```
+    $ aws secretsmanager delete-secret --secret-id SlackChannelID --force-delete-without-recovery --region us-east-1
+    ```
+* If you want to Exclude certain accounts from notifications, confirm your exlcusions file matches the format of the [sample ExcludeAccountIDs.csv file](ExcludeAccountIDs(sample).csv) with one account ID per line with no trailing commas (trailing commas indicate a null cell).
+  * If your accounts listed in the CSV file are not excluded, check the CloudWatch log group for the AHA Lambda function for the message "Key filename is not a .csv file" as an indicator of any issues with your file.
