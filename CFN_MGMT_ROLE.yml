@@ -18,7 +18,7 @@ Resources:
               - sts:AssumeRole
             Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::${OrgMemberAccountId}:root'
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${OrgMemberAccountId}:root'
       Policies:
         - PolicyName: AllowHealthCalls
           PolicyDocument:
