@@ -46,8 +46,7 @@ AWS Health Aware (AHA) is an automated notification tool for sending well-format
 
 # What's New
 
-Release 2.2 introduces an updated schema for Health events delivered to an EventBridge bus. This allows simplified matching of events which you can then consume with other AWS services or SaaS solutions.
-Read more about the [new feature and how to filter events using EventBridge](https://github.com/aws-samples/aws-health-aware/blob/main/new_aha_event_schema.md).  
+Release 2.3 introduces runtime performance improvements, terraform updates, allows use of Slack Workflow 2.0 webhooks (triggers), general fixes and documentation updates.
 
 # Architecture
 
@@ -447,6 +446,8 @@ $ terraform apply
 **If for some reason, you still have issues after updating, you can easily just delete the stack and redeploy. The infrastructure can be destroyed and rebuilt within minutes through Terraform.**
 
 # New Features
+*Release 2.2*
+
 We are happy to announce the launch of new enhancements to AHA. Please try them out and keep sending us your feedback!
 1. A revised schema for AHA events sent to EventBridge which enables new filtering and routing options. See the [new AHA event schema readme](new_aha_event_schema.md) for more detail. 
 2. Multi-region deployment option
