@@ -294,7 +294,7 @@ Resources:
                           Service: lambda.amazonaws.com
                         Action: sts:AssumeRole
                   ManagedPolicyArns:
-                    - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+                    - arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
                   Path: /
                   Policies:
                     - PolicyName: aha-lambda-copier
@@ -305,13 +305,13 @@ Resources:
                             Action:
                               - s3:GetObject
                             Resource:
-                              - 'arn:aws:s3:::${S3Bucket}*'
+                              - 'arn:${AWS::Partition}:s3:::${S3Bucket}*'
                           - Effect: Allow
                             Action:
                               - s3:PutObject
                               - s3:DeleteObject
                             Resource:
-                              - !Join ['', [ 'arn:aws:s3:::', !Ref AHA2ndRegionBucket, '*']]
+                              - !Join ['', [ 'arn:${AWS::Partition}:s3:::', !Ref AHA2ndRegionBucket, '*']]
               CopyAHAFunction:
                 Type: AWS::Lambda::Function
                 DependsOn: AHA2ndRegionBucket
@@ -440,8 +440,8 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: 
-                  - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
-                  - !If [UsingMultiRegion, !Sub 'arn:aws:logs:${SecondaryRegion}:${AWS::AccountId}:*', !Ref AWS::NoValue]
+                  - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*'
+                  - !If [UsingMultiRegion, !Sub 'arn:${AWS::Partition}:logs:${SecondaryRegion}:${AWS::AccountId}:*', !Ref AWS::NoValue]
               - !If 
                 - UsingSecrets
                 - Effect: Allow
@@ -459,31 +459,31 @@ Resources:
                    - !If
                      - UsingMultiRegionTeams
                      - !Sub 
-                       - 'arn:aws:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}' 
+                       - 'arn:${AWS::Partition}:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}'
                        - { SecretNameWithSha: !Select [1, !Split [':secret:', !Sub '${MicrosoftChannelSecret}' ]]}
                      - !Ref AWS::NoValue
                    - !If
                      - UsingMultiRegionSlack
                      - !Sub 
-                       - 'arn:aws:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}' 
+                       - 'arn:${AWS::Partition}:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}'
                        - { SecretNameWithSha: !Select [1, !Split [':secret:', !Sub '${SlackChannelSecret}' ]]}
                      - !Ref AWS::NoValue
                    - !If
                      - UsingMultiRegionEventBridge
                      - !Sub 
-                       - 'arn:aws:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}' 
+                       - 'arn:${AWS::Partition}:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}'
                        - { SecretNameWithSha: !Select [1, !Split [':secret:', !Sub '${EventBusNameSecret}' ]]}
                      - !Ref AWS::NoValue
                    - !If
                      - UsingMultiRegionChime
                      - !Sub 
-                       - 'arn:aws:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}' 
+                       - 'arn:${AWS::Partition}:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}'
                        - { SecretNameWithSha: !Select [1, !Split [':secret:', !Sub '${ChimeChannelSecret}' ]]}
                      - !Ref AWS::NoValue
                    - !If
                      - UsingMultiRegionCrossAccountRole
                      - !Sub 
-                       - 'arn:aws:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}' 
+                       - 'arn:${AWS::Partition}:secretsmanager:${SecondaryRegion}:${AWS::AccountId}:secret:${SecretNameWithSha}'
                        - { SecretNameWithSha: !Select [1, !Split [':secret:', !Sub '${AssumeRoleSecret}' ]]}
                      - !Ref AWS::NoValue
                 - !Ref 'AWS::NoValue'
@@ -504,14 +504,14 @@ Resources:
                 Action:
                   - dynamodb:ListTables
                 Resource: 
-                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:*'
-                  - !If [UsingMultiRegion, !Sub 'arn:aws:dynamodb:${SecondaryRegion}:${AWS::AccountId}:*', !Ref AWS::NoValue]
+                  - !Sub 'arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:*'
+                  - !If [UsingMultiRegion, !Sub 'arn:${AWS::Partition}:dynamodb:${SecondaryRegion}:${AWS::AccountId}:*', !Ref AWS::NoValue]
               - Effect: Allow
                 Action:
                   - ses:SendEmail
                 Resource: 
-                  - !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:*'
-                  - !If [UsingMultiRegion, !Sub 'arn:aws:ses:${SecondaryRegion}:${AWS::AccountId}:*', !Ref AWS::NoValue]
+                  - !Sub 'arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:*'
+                  - !If [UsingMultiRegion, !Sub 'arn:${AWS::Partition}:ses:${SecondaryRegion}:${AWS::AccountId}:*', !Ref AWS::NoValue]
               - Effect: Allow
                 Action:
                   - dynamodb:UpdateTimeToLive
@@ -528,14 +528,14 @@ Resources:
                 Action:
                   - events:PutEvents
                 Resource: 
-                  - !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${EventBusName}'
-                  - !If [UsingMultiRegion, !Sub 'arn:aws:events:${SecondaryRegion}:${AWS::AccountId}:event-bus/${EventBusName}', !Ref AWS::NoValue]
+                  - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:event-bus/${EventBusName}'
+                  - !If [UsingMultiRegion, !Sub 'arn:${AWS::Partition}:events:${SecondaryRegion}:${AWS::AccountId}:event-bus/${EventBusName}', !Ref AWS::NoValue]
               - !If 
                 - UsingAccountIds
                 - Effect: Allow
                   Action:
                     - s3:GetObject
-                  Resource: !Sub 'arn:aws:s3:::${S3Bucket}/${AccountIDs}'
+                  Resource: !Sub 'arn:${AWS::Partition}:s3:::${S3Bucket}/${AccountIDs}'
                 - !Ref 'AWS::NoValue'                     
               - !If 
                 - UsingCrossAccountRole
