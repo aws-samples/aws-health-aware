@@ -423,55 +423,166 @@ def get_org_message_for_teams(event_details, event_type, affected_org_accounts, 
             'service'].upper() + " service in the " + event_details['successfulSet'][0]['event'][
                     'region'].upper() + " region."
         message = {
-            "@type": "MessageCard",
-            "@context": "http://schema.org/extensions",
-            "themeColor": "FF0000",
-            "summary": "AWS Health Aware Alert",
-            "sections": [
+            "type": "AdaptiveCard",
+            "msteams": { "width": "full" },
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "version": "1.5",
+            "body": [
                 {
-                    "activityTitle": title,
-                    "markdown": False,
+                    "type": "TextBlock",
+                    "size": "Medium",
+                    "weight": "Bolder",
+                    "text": "AHA Health Alert"
+                },
+                {
+                    "type": "TextBlock",
+                    "weight": "Bolder",
+                    "text": "&#x1F6A8; [NEW] AWS Health reported an issue with the " + event_details['successfulSet'][0]['event'][
+            'service'].upper() + " service in the " + event_details['successfulSet'][0]['event'][
+                    'region'].upper() + " region.",
+                    "wrap": "true"
+                },
+                {
+                    "type": "TextBlock",
+                    "spacing": "None",
+                    "text": "Created DATE",
+                    "isSubtle": "true",
+                    "wrap": "true",
+                    "isVisible": "false"
+                },
+                {
+                    "type": "FactSet",
                     "facts": [
-                        {"name": "Account(s)", "value": affected_org_accounts},
-                        {"name": "Resource(s)", "value": affected_org_entities},
-                        {"name": "Service", "value": event_details['successfulSet'][0]['event']['service']},
-                        {"name": "Region", "value": event_details['successfulSet'][0]['event']['region']},
-                        {"name": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime'])},
-                        {"name": "Status", "value": event_details['successfulSet'][0]['event']['statusCode']},
-                        {"name": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn']},
-                        {"name": "Updates", "value": event_details['successfulSet'][0]['eventDescription']['latestDescription']}
+                          {
+                            "title": "Account(s)",
+                            "value": affected_org_accounts
+                          },
+                          {
+                            "title": "Resource(s)",
+                            "value": affected_org_entities
+                          },
+                          {
+                            "title": "Service",
+                            "value": event_details['successfulSet'][0]['event']['service']
+                          },
+                          {
+                            "title": "Region",
+                            "value": event_details['successfulSet'][0]['event']['region']
+                          },
+                          {
+                            "title": "Start Time (UTC)",
+                            "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime'])
+                          },
+                          {
+                            "title": "End Time (UTC)",
+                            "value": cleanup_time(event_details['successfulSet'][0]['event']['endTime'])
+                          },
+                          {
+                            "title": "Status",
+                            "value": event_details['successfulSet'][0]['event']['statusCode']
+                          },
+                          {
+                            "title": "Event ARN",
+                            "value": event_details['successfulSet'][0]['event']['arn']
+                          }
                     ],
+                    "$data": "${facts}"
+                },
+                {
+                    "type": "TextBlock",
+                    "text": "Description:",
+                    "wrap": "true",
+                    "weight": "Bolder"
+                },
+                {
+                    "type": "TextBlock",
+                    "text": get_last_aws_update(event_details),
+                    "wrap": "true"
                 }
-            ]
+            ],
         }
-
+        
     elif event_type == "resolve":
         title = "&#x2705; [RESOLVED] The AWS Health issue with the " + event_details['successfulSet'][0]['event'][
             'service'].upper() + " service in the " + event_details['successfulSet'][0]['event'][
                     'region'].upper() + " region is now resolved."
         message = {
-            "@type": "MessageCard",
-            "@context": "http://schema.org/extensions",
-            "themeColor": "00ff00",
-            "summary": "AWS Health Aware Alert",
-            "sections": [
+            "type": "AdaptiveCard",
+            "msteams": { "width": "full" },
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "version": "1.5",
+            "body": [
                 {
-                    "activityTitle": title,
-                    "markdown": False,
+                    "type": "TextBlock",
+                    "size": "Medium",
+                    "weight": "Bolder",
+                    "text": "AHA Health Alert"
+                },
+                {
+                    "type": "TextBlock",
+                    "weight": "Bolder",
+                    "text": "&#x2705; [RESOLVED] The AWS Health issue with the " + event_details['successfulSet'][0]['event'][  'service'].upper() + " service in the " + event_details['successfulSet'][0]['event']['region'].upper() + " region is now resolved.",
+                    "wrap": "true"
+                },
+                {
+                    "type": "TextBlock",
+                    "spacing": "None",
+                    "text": "Created DATE",
+                    "isSubtle": "true",
+                    "wrap": "true",
+                    "isVisible": "false"
+                },
+                {
+                    "type": "FactSet",
                     "facts": [
-                        {"name": "Account(s)", "value": affected_org_accounts},
-                        {"name": "Resource(s)", "value": affected_org_entities},
-                        {"name": "Service", "value": event_details['successfulSet'][0]['event']['service']},
-                        {"name": "Region", "value": event_details['successfulSet'][0]['event']['region']},
-                        {"name": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime'])},
-                        {"name": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['endTime'])},
-                        {"name": "Status", "value": event_details['successfulSet'][0]['event']['statusCode']},
-                        {"name": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn']},
-                        {"name": "Updates", "value": event_details['successfulSet'][0]['eventDescription']['latestDescription']}
+                          {
+                            "title": "Account(s)",
+                            "value": affected_org_accounts
+                          },
+                          {
+                            "title": "Resource(s)",
+                            "value": affected_org_entities
+                          },
+                          {
+                            "title": "Service",
+                            "value": event_details['successfulSet'][0]['event']['service']
+                          },
+                          {
+                            "title": "Region",
+                            "value": event_details['successfulSet'][0]['event']['region']
+                          },
+                          {
+                            "title": "Start Time (UTC)",
+                            "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime'])
+                          },
+                          {
+                            "title": "End Time (UTC)",
+                            "value": cleanup_time(event_details['successfulSet'][0]['event']['endTime'])
+                          },
+                          {
+                            "title": "Status",
+                            "value": event_details['successfulSet'][0]['event']['statusCode']
+                          },
+                          {
+                            "title": "Event ARN",
+                            "value": event_details['successfulSet'][0]['event']['arn']
+                          }
                     ],
+                    "$data": "${facts}"
+                },
+                {
+                    "type": "TextBlock",
+                    "text": "Description:",
+                    "wrap": "true",
+                    "weight": "Bolder"
+                },
+                {
+                    "type": "TextBlock",
+                    "text": get_last_aws_update(event_details),
+                    "wrap": "true"
                 }
-            ]
-        }
+            ],
+       }
     return message
     print("Message sent to Teams: ", message)
 
