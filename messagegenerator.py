@@ -480,28 +480,153 @@ def get_org_message_for_teams(event_details, event_type, affected_org_accounts, 
                           {
                             "title": "Status",
                             "value": event_details['successfulSet'][0]['event']['statusCode']
-                          },
-                          {
-                            "title": "Event ARN",
-                            "value": event_details['successfulSet'][0]['event']['arn']
                           }
                     ],
                     "$data": "${facts}"
                 },
                 {
-                    "type": "TextBlock",
-                    "text": "Description:",
-                    "wrap": "true",
-                    "weight": "Bolder"
-                },
-                {
-                    "type": "TextBlock",
-                    "text": get_last_aws_update(event_details),
-                    "wrap": "true"
+        "type": "Container",
+        "items": [{
+            "type": "ColumnSet",
+            "columns": [{
+                "type": "Column",
+                "items": [{
+                  "type": "TextBlock",
+                  "text": "Event ARN",
+                  "wrap": "true",
+                  "size": "Medium",
+                  "weight": "Bolder"
+                }],
+                "width": "stretch"
+              },
+              {
+                "type": "Column",
+                "id": "chevronDown1",
+                "spacing": "Small",
+                "verticalContentAlignment": "Center",
+                "items": [{
+                  "type": "Image",
+                  "url": "https://adaptivecards.io/content/down.png",
+                  "width": "20px",
+                  "altText": "collapsed"
+                }],
+                "width": "auto",
+                "isVisible": "false"
+              },
+              {
+                "type": "Column",
+                "id": "chevronUp1",
+                "spacing": "Small",
+                "verticalContentAlignment": "Center",
+                "items": [{
+                  "type": "Image",
+                  "url": "https://adaptivecards.io/content/up.png",
+                  "width": "20px",
+                  "altText": "expanded"
+                }],
+                "width": "auto"
+              }
+            ],
+            "selectAction": {
+              "type": "Action.ToggleVisibility",
+              "targetElements": [
+                "cardContent1",
+                "chevronUp1",
+                "chevronDown1"
+              ]
+            }
+          },
+          {
+            "type": "Container",
+            "id": "cardContent1",
+            "isVisible" : "false",
+            "items": [{
+              "type": "Container",
+              "items": [{
+                "type": "TextBlock",
+                "text": event_details['successfulSet'][0]['event']['arn'],
+                "isSubtle": "true",
+                "wrap": "true"
                 }
             ],
-        }
-        
+            }
+            ]
+          }
+        ]
+      },
+                {
+        "type": "Container",
+        "items": [{
+            "type": "ColumnSet",
+            "columns": [{
+                "type": "Column",
+                "items": [{
+                  "type": "TextBlock",
+                  "text": "Description",
+                  "wrap": "true",
+                  "size": "Medium",
+                  "weight": "Bolder"
+                }],
+                "width": "stretch"
+              },
+              {
+                "type": "Column",
+                "id": "chevronDown2",
+                "spacing": "Small",
+                "verticalContentAlignment": "Center",
+                "items": [{
+                  "type": "Image",
+                  "url": "https://adaptivecards.io/content/down.png",
+                  "width": "20px",
+                  "altText": "collapsed"
+                }],
+                "width": "auto",
+                "isVisible": "false"
+              },
+              {
+                "type": "Column",
+                "id": "chevronUp2",
+                "spacing": "Small",
+                "verticalContentAlignment": "Center",
+                "items": [{
+                  "type": "Image",
+                  "url": "https://adaptivecards.io/content/up.png",
+                  "width": "20px",
+                  "altText": "expanded"
+                }],
+                "width": "auto"
+              }
+            ],
+            "selectAction": {
+              "type": "Action.ToggleVisibility",
+              "targetElements": [
+                "cardContent2",
+                "chevronUp2",
+                "chevronDown2"
+              ]
+            }
+          },
+          {
+            "type": "Container",
+            "id": "cardContent2",
+            "isVisible" : "false",
+            "items": [{
+              "type": "Container",
+              "items": [{
+                "type": "TextBlock",
+                "text": get_last_aws_update(event_details),
+                "isSubtle": "true",
+                "wrap": "true"
+                }
+            ],
+            }
+            ]
+          }
+        ]
+      },
+            ]
+        }    
+               
     elif event_type == "resolve":
         title = "&#x2705; [RESOLVED] The AWS Health issue with the " + event_details['successfulSet'][0]['event'][
             'service'].upper() + " service in the " + event_details['successfulSet'][0]['event'][
@@ -562,26 +687,151 @@ def get_org_message_for_teams(event_details, event_type, affected_org_accounts, 
                           {
                             "title": "Status",
                             "value": event_details['successfulSet'][0]['event']['statusCode']
-                          },
-                          {
-                            "title": "Event ARN",
-                            "value": event_details['successfulSet'][0]['event']['arn']
                           }
                     ],
                     "$data": "${facts}"
                 },
                 {
-                    "type": "TextBlock",
-                    "text": "Description:",
-                    "wrap": "true",
-                    "weight": "Bolder"
+        "type": "Container",
+        "items": [{
+            "type": "ColumnSet",
+            "columns": [{
+                "type": "Column",
+                "items": [{
+                "type": "TextBlock",
+                  "text": "Event ARN",
+                  "wrap": "true",
+                  "size": "Medium",
+                  "weight": "Bolder"
+                }],
+                "width": "stretch"
                 },
-                {
-                    "type": "TextBlock",
-                    "text": get_last_aws_update(event_details),
-                    "wrap": "true"
+              {
+                "type": "Column",
+                "id": "chevronDown1",
+                "spacing": "Small",
+                "verticalContentAlignment": "Center",
+                "items": [{
+                  "type": "Image",
+                  "url": "https://adaptivecards.io/content/down.png",
+                  "width": "20px",
+                  "altText": "collapsed"
+                }],
+                "width": "auto",
+                "isVisible": "false"
+              },
+              {
+                "type": "Column",
+                "id": "chevronUp1",
+                "spacing": "Small",
+                "verticalContentAlignment": "Center",
+                "items": [{
+                  "type": "Image",
+                  "url": "https://adaptivecards.io/content/up.png",
+                  "width": "20px",
+                  "altText": "expanded"
+                }],
+                "width": "auto"
+              }
+            ],
+            "selectAction": {
+              "type": "Action.ToggleVisibility",
+              "targetElements": [
+                "cardContent1",
+                "chevronUp1",
+                "chevronDown1"
+              ]
+            }
+          },
+          {
+            "type": "Container",
+            "id": "cardContent1",
+            "isVisible" : "false",
+            "items": [{
+              "type": "Container",
+              "items": [{
+                "type": "TextBlock",
+                "text": event_details['successfulSet'][0]['event']['arn'],
+                "isSubtle": "true",
+                "wrap": "true"
                 }
             ],
+            }
+            ]
+          }
+        ]
+      },
+                {
+        "type": "Container",
+        "items": [{
+            "type": "ColumnSet",
+            "columns": [{
+                "type": "Column",
+                "items": [{
+                  "type": "TextBlock",
+                  "text": "Description",
+                  "wrap": "true",
+                  "size": "Medium",
+                  "weight": "Bolder"
+                }],
+                "width": "stretch"
+              },
+              {
+                "type": "Column",
+                "id": "chevronDown2",
+                "spacing": "Small",
+                "verticalContentAlignment": "Center",
+                "items": [{
+                  "type": "Image",
+                  "url": "https://adaptivecards.io/content/down.png",
+                  "width": "20px",
+                  "altText": "collapsed"
+                }],
+                "width": "auto",
+                "isVisible": "false"
+              },
+              {
+                "type": "Column",
+                "id": "chevronUp2",
+                "spacing": "Small",
+                "verticalContentAlignment": "Center",
+                "items": [{
+                  "type": "Image",
+                  "url": "https://adaptivecards.io/content/up.png",
+                  "width": "20px",
+                  "altText": "expanded"
+                }],
+                "width": "auto"
+              }
+            ],
+            "selectAction": {
+              "type": "Action.ToggleVisibility",
+              "targetElements": [
+                "cardContent2",
+                "chevronUp2",
+                "chevronDown2"
+              ]
+            }
+          },
+          {
+            "type": "Container",
+            "id": "cardContent2",
+            "isVisible" : "false",
+            "items": [{
+              "type": "Container",
+              "items": [{
+                "type": "TextBlock",
+                "text": get_last_aws_update(event_details),
+                "isSubtle": "true",
+                "wrap": "true"
+                }
+            ],
+            }
+            ]
+          }
+        ]
+      },
+            ]
        }
     return message
     print("Message sent to Teams: ", message)
