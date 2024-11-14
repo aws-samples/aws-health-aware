@@ -226,7 +226,7 @@ def send_org_alert(
         except URLError as e:
             print("Server connection failed: ", e.reason)
             pass
-    if "office.com/webhook" in teams_url:
+    if "logic.azure.com:443/workflows" in teams_url:
         try:
             print("Sending the alert to Teams")
             send_to_teams(
