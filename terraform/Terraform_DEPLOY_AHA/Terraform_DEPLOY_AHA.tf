@@ -5,6 +5,8 @@
 
 data "aws_caller_identity" "current" {}
 
+data "aws_partition" "current" {}
+
 provider "aws" {
     region  = var.aha_primary_region
     default_tags {
@@ -473,8 +475,8 @@ data "aws_iam_policy_document" "AHA-LambdaPolicy-Document" {
           "logs:PutLogEvents",
     ]
     resources = [
-          "arn:aws:logs:${var.aha_primary_region}:${data.aws_caller_identity.current.account_id}:*",
-          "arn:aws:logs:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:*"
+          "arn:${data.aws_partition.current.partition}:logs:${var.aha_primary_region}:${data.aws_caller_identity.current.account_id}:*",
+          "arn:${data.aws_partition.current.partition}:logs:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:*"
     ]
   }
   statement {
@@ -499,8 +501,8 @@ data "aws_iam_policy_document" "AHA-LambdaPolicy-Document" {
           "dynamodb:ListTables",
     ]
     resources = [
-          "arn:aws:dynamodb:${var.aha_primary_region}:${data.aws_caller_identity.current.account_id}:*",
-          "arn:aws:dynamodb:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:*",
+          "arn:${data.aws_partition.current.partition}:dynamodb:${var.aha_primary_region}:${data.aws_caller_identity.current.account_id}:*",
+          "arn:${data.aws_partition.current.partition}:dynamodb:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:*",
     ]
   }
   statement {
@@ -509,8 +511,8 @@ data "aws_iam_policy_document" "AHA-LambdaPolicy-Document" {
           "ses:SendEmail",
     ]
     resources = [
-          "arn:aws:ses:${var.aha_primary_region}:${data.aws_caller_identity.current.account_id}:*",
-          "arn:aws:ses:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:*",
+          "arn:${data.aws_partition.current.partition}:ses:${var.aha_primary_region}:${data.aws_caller_identity.current.account_id}:*",
+          "arn:${data.aws_partition.current.partition}:ses:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:*",
     ]
   }
   statement {
@@ -528,8 +530,8 @@ data "aws_iam_policy_document" "AHA-LambdaPolicy-Document" {
     ]
     resources = [
           #aws_dynamodb_table.AHA-DynamoDBTable.arn
-          "arn:aws:dynamodb:${var.aha_primary_region}:${data.aws_caller_identity.current.account_id}:table/${var.dynamodbtable}-${random_string.resource_code.result}",
-          "arn:aws:dynamodb:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:table/${var.dynamodbtable}-${random_string.resource_code.result}",
+          "arn:${data.aws_partition.current.partition}:dynamodb:${var.aha_primary_region}:${data.aws_caller_identity.current.account_id}:table/${var.dynamodbtable}-${random_string.resource_code.result}",
+          "arn:${data.aws_partition.current.partition}:dynamodb:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:table/${var.dynamodbtable}-${random_string.resource_code.result}",
     ]
   }
   dynamic "statement" {
@@ -544,8 +546,8 @@ data "aws_iam_policy_document" "AHA-LambdaPolicy-Document" {
       ]
       resources = [
           aws_secretsmanager_secret.SlackChannelID[0].arn,
-          "arn:aws:secretsmanager:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:secret:${element(split(":", aws_secretsmanager_secret.SlackChannelID[0].arn),6)}"
-#          var.aha_secondary_region != "" ? "arn:aws:secretsmanager:${var.aha_secondary_region}:${data.aws_caller_identity.current.account_id}:secret:${element(split(":", aws_secretsmanager_secret.SlackChannelID[0].arn),6)}" : null
+          "arn:${data.aws_partition.current.partition}:secretsmanager:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:secret:${element(split(":", aws_secretsmanager_secret.SlackChannelID[0].arn),6)}"
+#          var.aha_secondary_region != "" ? "arn:${data.aws_partition.current.partition}:secretsmanager:${var.aha_secondary_region}:${data.aws_caller_identity.current.account_id}:secret:${element(split(":", aws_secretsmanager_secret.SlackChannelID[0].arn),6)}" : null
       ]
     }
   }
@@ -561,7 +563,7 @@ data "aws_iam_policy_document" "AHA-LambdaPolicy-Document" {
       ]
       resources = [
           aws_secretsmanager_secret.MicrosoftChannelID[0].arn,
-          "arn:aws:secretsmanager:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:secret:${element(split(":", aws_secretsmanager_secret.MicrosoftChannelID[0].arn),6)}"
+          "arn:${data.aws_partition.current.partition}:secretsmanager:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:secret:${element(split(":", aws_secretsmanager_secret.MicrosoftChannelID[0].arn),6)}"
       ]
     }
   }
@@ -577,7 +579,7 @@ data "aws_iam_policy_document" "AHA-LambdaPolicy-Document" {
       ]
       resources = [
           aws_secretsmanager_secret.ChimeChannelID[0].arn,
-          "arn:aws:secretsmanager:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:secret:${element(split(":", aws_secretsmanager_secret.ChimeChannelID[0].arn),6)}"
+          "arn:${data.aws_partition.current.partition}:secretsmanager:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:secret:${element(split(":", aws_secretsmanager_secret.ChimeChannelID[0].arn),6)}"
       ]
     }
   }
@@ -593,7 +595,7 @@ data "aws_iam_policy_document" "AHA-LambdaPolicy-Document" {
       ]
       resources = [
           aws_secretsmanager_secret.EventBusName[0].arn,
-          "arn:aws:secretsmanager:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:secret:${element(split(":", aws_secretsmanager_secret.EventBusName[0].arn),6)}"
+          "arn:${data.aws_partition.current.partition}:secretsmanager:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:secret:${element(split(":", aws_secretsmanager_secret.EventBusName[0].arn),6)}"
       ]
     }
   }
@@ -609,7 +611,7 @@ data "aws_iam_policy_document" "AHA-LambdaPolicy-Document" {
       ]
       resources = [
           aws_secretsmanager_secret.AssumeRoleArn[0].arn,
-          "arn:aws:secretsmanager:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:secret:${element(split(":", aws_secretsmanager_secret.AssumeRoleArn[0].arn),6)}"
+          "arn:${data.aws_partition.current.partition}:secretsmanager:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:secret:${element(split(":", aws_secretsmanager_secret.AssumeRoleArn[0].arn),6)}"
       ]
     }
   }
@@ -621,8 +623,8 @@ data "aws_iam_policy_document" "AHA-LambdaPolicy-Document" {
           "events:PutEvents",
       ]
       resources = [
-          "arn:aws:events:${var.aha_primary_region}:${data.aws_caller_identity.current.account_id}:event-bus/${var.EventBusName}",
-          "arn:aws:events:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:event-bus/${var.EventBusName}"
+          "arn:${data.aws_partition.current.partition}:events:${var.aha_primary_region}:${data.aws_caller_identity.current.account_id}:event-bus/${var.EventBusName}",
+          "arn:${data.aws_partition.current.partition}:events:${local.secondary_region}:${data.aws_caller_identity.current.account_id}:event-bus/${var.EventBusName}"
       ]
     }
   }
@@ -646,8 +648,8 @@ data "aws_iam_policy_document" "AHA-LambdaPolicy-Document" {
           "s3:GetObject",
       ]
       resources = [
-          "arn:aws:s3:::aha-bucket-${var.aha_primary_region}-${random_string.resource_code.result}/${var.ExcludeAccountIDs}",
-          "arn:aws:s3:::aha-bucket-${local.secondary_region}-${random_string.resource_code.result}/${var.ExcludeAccountIDs}",
+          "arn:${data.aws_partition.current.partition}:s3:::aha-bucket-${var.aha_primary_region}-${random_string.resource_code.result}/${var.ExcludeAccountIDs}",
+          "arn:${data.aws_partition.current.partition}:s3:::aha-bucket-${local.secondary_region}-${random_string.resource_code.result}/${var.ExcludeAccountIDs}",
       ]
     }
   }
