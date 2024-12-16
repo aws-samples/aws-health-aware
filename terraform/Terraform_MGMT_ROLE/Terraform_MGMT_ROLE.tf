@@ -1,5 +1,7 @@
 # Deploy Cross-Account Role for PHD access
 
+data "aws_partition" "current" {}
+
 # Parameters
 provider "aws" {
     region  = var.aha_primary_region
@@ -48,7 +50,7 @@ resource "aws_iam_role" "AWSHealthAwareRoleForPHDEvents" {
                     Action    = "sts:AssumeRole"
                     Effect    = "Allow"
                     Principal = {
-                        AWS = "arn:aws:iam::${var.OrgMemberAccountId}:root"
+                        AWS = "arn:${data.aws_partition.current.partition}:iam::${var.OrgMemberAccountId}:root"
                     }
                 },
             ]

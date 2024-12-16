@@ -1003,7 +1003,7 @@ def get_sts_token(service):
     assumeRoleArn = get_secrets()["ahaassumerole"]
     boto3_client = None
 
-    if "arn:aws:iam::" in assumeRoleArn:
+    if assumeRoleArn.startswith("arn:"):
         ACCESS_KEY = []
         SECRET_KEY = []
         SESSION_TOKEN = []
